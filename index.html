@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家事鍍 - 營運管理與報價分潤系統</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      background-color: #f8fafc;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    /* 自訂捲軸樣式 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- 頂部導航欄 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo 與系統標題 -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <span class="font-bold text-lg tracking-wide text-white">家事鍍</span>
+            <span class="text-xs text-cyan-400 font-medium ml-2 px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-800">營運助理 Suite</span>
+          </div>
+        </div>
+
+        <!-- 導航切換按鈕 (桌面) -->
+        <nav class="hidden md:flex space-x-1">
+          <button onclick="switchTab('cases')" id="tab-btn-cases" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 bg-blue-600 text-white shadow-sm">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>案件管理與丈量</span>
+          </button>
+          <button onclick="switchTab('quote')" id="tab-btn-quote" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>現場丈量報價</span>
+          </button>
+          <button onclick="switchTab('schedule')" id="tab-btn-schedule" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+            <span>預約施作排程</span>
+          </button>
+          <button onclick="switchTab('profit')" id="tab-btn-profit" class="nav-tab px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="coins" class="w-4 h-4"></i>
+            <span>月度分潤核算</span>
+          </button>
+        </nav>
+
+        <!-- 快速功能按鈕 -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openNewCaseModal()" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-sm font-semibold px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1.5 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">新進案件</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 手機版底部/次導航 -->
+    <div class="md:hidden flex border-t border-slate-800 bg-slate-900/95 overflow-x-auto px-2 py-1.5 space-x-1">
+      <button onclick="switchTab('cases')" id="mobile-tab-cases" class="flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-cyan-400 bg-slate-800 whitespace-nowrap">案件管理</button>
+      <button onclick="switchTab('quote')" id="mobile-tab-quote" class="flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-slate-400 hover:text-white whitespace-nowrap">報價單</button>
+      <button onclick="switchTab('schedule')" id="mobile-tab-schedule" class="flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-slate-400 hover:text-white whitespace-nowrap">排程施作</button>
+      <button onclick="switchTab('profit')" id="mobile-tab-profit" class="flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-slate-400 hover:text-white whitespace-nowrap">分潤表</button>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 no-print">
+
+    <!-- 頁籤 1：案件管理與預約丈量 -->
+    <section id="view-cases" class="tab-view block space-y-6">
+      <!-- 統計摘要卡片 -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+            <i data-lucide="ruler" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">待丈量場次</p>
+            <p id="stat-pending-measure" class="text-xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">已排施作</p>
+            <p id="stat-scheduled" class="text-xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+            <i data-lucide="check-circle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">已完工待分潤</p>
+            <p id="stat-completed" class="text-xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+            <i data-lucide="circle-dollar-sign" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">本月完工總額</p>
+            <p id="stat-total-amount" class="text-xl font-bold text-slate-800">$0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 案件列表管理卡片 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50/50">
+          <div>
+            <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+              <i data-lucide="list-ordered" class="w-4 h-4 text-cyan-600"></i>
+              <span>家事鍍案場總覽</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">點擊案件可快速進入丈量報價、排程或分潤核算</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="case-search-input" oninput="renderCasesTable()" placeholder="搜尋客戶、電話或單號..." class="text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none w-48 sm:w-64">
+            <select id="case-status-filter" onchange="renderCasesTable()" class="text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+              <option value="ALL">全部狀態</option>
+              <option value="PENDING_MEASURE">待丈量</option>
+              <option value="QUOTED">已報價/待付定</option>
+              <option value="SCHEDULED">已排施作</option>
+              <option value="COMPLETED">完工驗收</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4 font-semibold">單號 / 客戶</th>
+                <th class="py-3 px-4 font-semibold">案場地址 / 聯絡電話</th>
+                <th class="py-3 px-4 font-semibold">預約丈量/施作時間</th>
+                <th class="py-3 px-4 font-semibold">案件類別 / 總額</th>
+                <th class="py-3 px-4 font-semibold text-center">狀態</th>
+                <th class="py-3 px-4 font-semibold text-center">快捷操作</th>
+              </tr>
+            </thead>
+            <tbody id="cases-tbody" class="divide-y divide-slate-100">
+              <!-- 動態由 JavaScript 載入 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 頁籤 2：現場丈量與即時報價單生成 -->
+    <section id="view-quote" class="tab-view hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">Quote Generator</span>
+          <h2 class="text-lg font-bold text-slate-800 mt-1">★ 家事鍍現場丈量與報價單系統</h2>
+          <p class="text-xs text-slate-500">標準格式對齊巧好運實業有限公司報價單格式，自動計數與30%定金換算</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="loadSampleQuoteData()" class="px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center space-x-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>帶入範例</span>
+          </button>
+          <button onclick="printQuotation()" class="px-4 py-2 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>列印 / 轉存 PDF 報價單</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 報價輸入與編輯區 (左右或上下響應式分欄) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 左側：丈量與金額編輯表單 -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- 關聯案件選擇 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+              <i data-lucide="user-check" class="w-4 h-4 text-cyan-600"></i>
+              <span>案件基本資料</span>
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">報價單編號</label>
+                <input type="text" id="quote-case-id" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg bg-slate-50 font-mono" readonly>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">報價日期</label>
+                <input type="date" id="quote-case-date" onchange="syncQuotePreview()" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">客戶姓名 *</label>
+                <input type="text" id="quote-client-name" oninput="syncQuotePreview()" placeholder="例：林先生" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-cyan-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">聯絡電話 *</label>
+                <input type="text" id="quote-client-phone" oninput="syncQuotePreview()" placeholder="09xxxxxxxx" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-cyan-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">施作地址 *</label>
+              <input type="text" id="quote-client-address" oninput="syncQuotePreview()" placeholder="施工案場完整地址" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-cyan-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">統一編號</label>
+                <input type="text" id="quote-client-taxid" oninput="syncQuotePreview()" placeholder="個人無可免填" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">施作類別</label>
+                <select id="quote-category" onchange="syncQuotePreview()" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-lg bg-white">
+                  <option value="A">貼膜 (A類 業務分潤標準)</option>
+                  <option value="B">鍍膜 (B類 業務分潤標準)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 丈量項目列表 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="ruler" class="w-4 h-4 text-cyan-600"></i>
+                <span>施工項目與才數試算</span>
+              </h3>
+              <button onclick="addQuoteItemRow()" class="text-xs bg-cyan-50 text-cyan-700 hover:bg-cyan-100 px-2.5 py-1 rounded-md font-medium transition flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>加一行</span>
+              </button>
+            </div>
+
+            <!-- 動態項目容器 -->
+            <div id="quote-items-container" class="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+              <!-- 動態由 JavaScript 載入每列項目 -->
+            </div>
+
+            <!-- 金額彙總微調 -->
+            <div class="pt-3 border-t border-slate-200 space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-600">施工總金額小計</span>
+                <span id="form-subtotal" class="font-bold text-slate-800">$0</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-600">加購或附加金額</span>
+                <div class="w-32">
+                  <input type="number" id="form-addon" oninput="calculateQuoteTotals()" value="0" class="w-full text-right text-sm px-2 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-cyan-500">
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-600">優惠折讓金額</span>
+                <div class="w-32">
+                  <input type="number" id="form-discount" oninput="calculateQuoteTotals()" value="0" class="w-full text-right text-sm px-2 py-1 border border-red-300 text-red-600 rounded focus:ring-1 focus:ring-red-500">
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-base font-bold text-cyan-700 pt-2 border-t border-dashed border-slate-200">
+                <span>最終報價金額</span>
+                <span id="form-final-total">$0</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-1">
+                <div class="bg-cyan-50/70 p-2 rounded text-cyan-900 border border-cyan-100">
+                  <span class="font-semibold">30% 訂金：</span>
+                  <span id="form-deposit-display">$0</span>
+                </div>
+                <div class="bg-slate-50 p-2 rounded text-slate-700 border border-slate-200">
+                  <span class="font-semibold">70% 尾款：</span>
+                  <span id="form-balance-display">$0</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="saveCurrentQuoteToCase()" class="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold text-sm rounded-lg shadow-sm transition flex items-center justify-center space-x-2">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>儲存報價並更新案件</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 右側：完全符合《★家事鍍報價單.xlsx》的實時預覽區 -->
+        <div class="lg:col-span-7">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-md">
+            <div class="flex items-center justify-between mb-3 no-print">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide flex items-center space-x-1">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                <span>標準 A4 報價單預覽 (即時聯動)</span>
+              </span>
+              <button onclick="printQuotation()" class="text-xs text-blue-600 hover:underline flex items-center space-x-1">
+                <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+                <span>全螢幕列印</span>
+              </button>
+            </div>
+
+            <!-- 報價單可列印內容核心 -->
+            <div id="print-area" class="border border-slate-300 p-6 sm:p-8 bg-white text-slate-900 text-xs sm:text-sm shadow-inner rounded-sm leading-relaxed">
+              <!-- 報價單抬頭 -->
+              <div class="border-b-2 border-slate-800 pb-4 mb-4">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-wider text-slate-900">巧好運實業有限公司</h1>
+                    <p class="text-xs text-slate-600 mt-1">統一編號：<span class="font-semibold text-slate-800">90026635</span></p>
+                    <p class="text-xs text-slate-600">匯款銀行：<span class="font-semibold text-slate-800">永豐商銀 (807)</span> 帳號：<span class="font-semibold font-mono text-slate-800">0380-1800-260983</span></p>
+                  </div>
+                  <div class="text-right">
+                    <div class="inline-block bg-slate-900 text-white font-bold px-3 py-1 text-sm tracking-widest rounded-sm mb-1">估價單 / 報價單</div>
+                    <p class="text-xs text-slate-500 font-mono">單號：<span id="preview-quote-id" class="font-bold text-slate-800">AH2026110901</span></p>
+                    <p class="text-xs text-slate-500">日期：<span id="preview-quote-date" class="text-slate-700">2026/11/09</span></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 客戶基本資料欄 -->
+              <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 bg-slate-50 p-3 rounded border border-slate-200 mb-4 text-xs">
+                <div><span class="text-slate-500 font-medium">客戶名稱：</span> <span id="preview-client-name" class="font-bold text-slate-800">林先生</span></div>
+                <div><span class="text-slate-500 font-medium">聯絡電話：</span> <span id="preview-client-phone" class="font-mono text-slate-800">0912-345-678</span></div>
+                <div class="col-span-2"><span class="text-slate-500 font-medium">施作地址：</span> <span id="preview-client-address" class="text-slate-800">新北市新莊區中平路100號</span></div>
+                <div><span class="text-slate-500 font-medium">統一編號：</span> <span id="preview-client-taxid" class="text-slate-800">--</span></div>
+                <div><span class="text-slate-500 font-medium">保固期限：</span> <span class="text-slate-800 font-semibold">自完工日起保固 3 年</span></div>
+              </div>
+
+              <!-- 施作明細清單表格 (符合報價單 Excel 版型) -->
+              <table class="w-full border-collapse border border-slate-300 text-xs mb-4">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 border-b border-slate-300">
+                    <th class="border border-slate-300 p-2 text-left w-28">施工項目</th>
+                    <th class="border border-slate-300 p-2 text-left">詳細資料 / 尺寸才數</th>
+                    <th class="border border-slate-300 p-2 text-center w-16">數量</th>
+                    <th class="border border-slate-300 p-2 text-right w-24">合計 (NT$)</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-items-tbody">
+                  <!-- 動態注入 -->
+                </tbody>
+              </table>
+
+              <!-- 金額結算表格 -->
+              <div class="flex justify-end mb-4">
+                <div class="w-64 space-y-1 text-xs">
+                  <div class="flex justify-between py-0.5 border-b border-slate-200">
+                    <span class="text-slate-600">總金額合計：</span>
+                    <span id="preview-subtotal" class="font-mono font-semibold">$0</span>
+                  </div>
+                  <div class="flex justify-between py-0.5 border-b border-slate-200">
+                    <span class="text-slate-600">加購金額：</span>
+                    <span id="preview-addon" class="font-mono">$0</span>
+                  </div>
+                  <div class="flex justify-between py-0.5 border-b border-slate-200 text-red-600">
+                    <span>優惠折扣：</span>
+                    <span id="preview-discount" class="font-mono">-$0</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b-2 border-slate-900 font-bold text-sm text-slate-900">
+                    <span>總計優惠金額：</span>
+                    <span id="preview-final" class="font-mono text-blue-700">$0</span>
+                  </div>
+                  <div class="flex justify-between py-1 bg-amber-50 px-2 rounded font-semibold text-amber-900">
+                    <span>訂金 30% (排程)：</span>
+                    <span id="preview-deposit" class="font-mono">$0</span>
+                  </div>
+                  <div class="flex justify-between py-1 bg-slate-100 px-2 rounded text-slate-700">
+                    <span>尾款 70% (驗收)：</span>
+                    <span id="preview-balance" class="font-mono">$0</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 施工條款與注意事項 (嚴格符合《★家事鍍報價單.xlsx》) -->
+              <div class="border-t border-slate-200 pt-3 text-[11px] text-slate-600 space-y-1">
+                <div class="font-bold text-slate-800">【施工條款與注意事項】</div>
+                <ol class="list-decimal pl-4 space-y-0.5 text-slate-600">
+                  <li><strong>訂金與排程：</strong>支付訂金 30% 方可保留排程檔期，尾款完工驗收當日付清。</li>
+                  <li><strong>三年保固：</strong>除人為外力破壞、非正常清潔劑破壞或特殊贈品外，本公司提供三年保固。</li>
+                  <li><strong>晶盾膜特性：</strong>厚度 3 微米、透光率 99%，施工後具疏水疏油、高耐磨防刮保護。</li>
+                  <li><strong>邊緣預留：</strong>施工邊緣依標準工藝預留 2~5mm 隙縫，以防因熱脹冷縮造成邊緣翹曲。</li>
+                  <li><strong>光觸媒矽利康：</strong>若有施作光觸媒防霉，矽利康需保持自然養護乾燥 24 小時。</li>
+                  <li><strong>付款方式：</strong>可透過上述永豐商銀帳戶匯款，或使用官方線上刷卡。</li>
+                </ol>
+              </div>
+
+              <!-- 雙方簽章欄位 -->
+              <div class="grid grid-cols-2 gap-8 mt-6 pt-4 border-t border-slate-200 text-xs">
+                <div>
+                  <p class="text-slate-500 mb-6">施工承攬單位：巧好運實業有限公司</p>
+                  <div class="border-b border-slate-400 w-3/4"></div>
+                  <p class="text-[10px] text-slate-400 mt-1">經辦業務專員簽章</p>
+                </div>
+                <div>
+                  <p class="text-slate-500 mb-6">客戶確認回簽：</p>
+                  <div class="border-b border-slate-400 w-3/4"></div>
+                  <p class="text-[10px] text-slate-400 mt-1">客戶簽章並回傳即成案</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 頁籤 3：預約施作排程與行事曆同步 -->
+    <section id="view-schedule" class="tab-view hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+            <i data-lucide="calendar" class="w-5 h-5 text-cyan-600"></i>
+            <span>預約施作排程與派工</span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">安排工班、指派業務與領班師傅，一鍵匯出行事曆與加入 TimeTree</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="inline-flex items-center text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+            支援 Google 日曆與 TimeTree (ICS 匯入)
+          </span>
+        </div>
+      </div>
+
+      <!-- 排程中案件清單 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="scheduled-cards-container">
+        <!-- 動態由 JavaScript 載入排程卡片 -->
+      </div>
+    </section>
+
+    <!-- 頁籤 4：月度施作分潤自動核算 -->
+    <section id="view-profit" class="tab-view hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Commission Engine</span>
+          <h2 class="text-lg font-bold text-slate-800 mt-1">★ 家事鍍業務經銷分潤表 (V2 標準)</h2>
+          <p class="text-xs text-slate-500">精準對齊《H九月初家事鍍業務經銷分潤表V2.xlsx》拆分邏輯，自動切分公司、業務Frank、主管Alex趴數與施做獎金</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="copyProfitTableToClipboard()" class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center space-x-1.5">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            <span>複製 Excel 格式</span>
+          </button>
+          <button onclick="exportProfitCSV()" class="px-3.5 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>匯出 CSV 報表</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 分潤費率說明規則提示 -->
+      <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 rounded-xl text-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold flex items-center space-x-1 text-cyan-400">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>本月分潤計算規則（已鎖定 V2 標準公式）</span>
+          </span>
+          <span class="text-slate-400">來源人員 10% ｜ 隸屬 5% ｜ 領班 5% ｜ 主管 5%</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-300 pt-1 border-t border-slate-700">
+          <div>
+            <span class="font-bold text-amber-300">【貼膜類 A】</span>
+            <span>公司固定 40% ｜ 業務 (Frank) 15% ｜ 領班 5% ｜ 施做獎金 10%~20%</span>
+          </div>
+          <div>
+            <span class="font-bold text-cyan-300">【鍍膜類 B】</span>
+            <span>公司固定 35% ｜ 業務 (Frank) 20% ｜ 領班 5% ｜ 施做獎金 10%~20%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分潤總計摘要 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">本月完工案件總金額</p>
+          <p id="profit-stat-gross" class="text-2xl font-bold text-slate-900 mt-1">$0</p>
+          <p class="text-[11px] text-slate-400 mt-0.5" id="profit-case-count">共 0 場次</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">業務兼施做 (Frank) 預估實領</p>
+          <p id="profit-stat-frank" class="text-2xl font-bold text-cyan-700 mt-1">$0</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">含業績獎金 + 施做獎金</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">地區主管 (Alex) 預估實領</p>
+          <p id="profit-stat-alex" class="text-2xl font-bold text-purple-700 mt-1">$0</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">含主管提成 5% + 施做支援</p>
+        </div>
+      </div>
+
+      <!-- 分潤明細表 (呈現 Excel 1案3行的結構) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-800">已完工施作場次分潤核算明細表 (1案3行)</h3>
+          <span class="text-xs text-slate-500">對齊九月V2試算表樣式</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-700 border-collapse">
+            <thead class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200 font-semibold">
+              <tr>
+                <th class="py-2.5 px-3 border border-slate-200">單號 / 類別</th>
+                <th class="py-2.5 px-3 border border-slate-200">客戶 / 備註</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-right">消費金額</th>
+                <th class="py-2.5 px-3 border border-slate-200">分潤身分</th>
+                <th class="py-2.5 px-3 border border-slate-200">人員名</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-center">合計%數</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-right">%數提成</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-right">施做金額</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-center">施做%</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-right">施做獎金</th>
+                <th class="py-2.5 px-3 border border-slate-200 text-right font-bold text-slate-900">實領總計</th>
+              </tr>
+            </thead>
+            <tbody id="profit-tbody" class="divide-y divide-slate-100">
+              <!-- 動態由 JavaScript 計算產出 1 案 3 行 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal：新增 / 編輯案件彈窗 -->
+  <div id="case-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 id="case-modal-title" class="font-bold text-base flex items-center space-x-2">
+          <i data-lucide="calendar-plus" class="w-5 h-5 text-cyan-400"></i>
+          <span>新增家事鍍案件與預約丈量</span>
+        </h3>
+        <button onclick="closeCaseModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="case-form" onsubmit="handleCaseFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="form-case-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">客戶姓名 *</label>
+            <input type="text" id="form-client-name" required placeholder="例：林先生" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">聯絡電話 *</label>
+            <input type="tel" id="form-client-phone" required placeholder="09xxxxxxxx" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">施作地點 / 案場地址 *</label>
+          <input type="text" id="form-client-addr" required placeholder="例：新北市新莊區中平路100號" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">預約丈量日期 *</label>
+            <input type="date" id="form-measure-date" required class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">預約時段 *</label>
+            <input type="time" id="form-measure-time" required value="10:00" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">施作類別</label>
+            <select id="form-category-select" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="A">貼膜 (A類)</option>
+              <option value="B">鍍膜 (B類)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">案件目前狀態</label>
+            <select id="form-status-select" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="PENDING_MEASURE">待丈量</option>
+              <option value="QUOTED">已報價/待付定</option>
+              <option value="SCHEDULED">已排施作</option>
+              <option value="COMPLETED">完工驗收</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">初勘需求備註</label>
+          <textarea id="form-case-notes" rows="2" placeholder="例：淋浴隔間玻璃貼膜、浴室防霉光觸媒矽利康..." class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeCaseModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">取消</button>
+          <button type="submit" class="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-lg shadow-sm transition">儲存案件</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal：排程施作彈窗 (指派工班與設定施作日) -->
+  <div id="schedule-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="font-bold text-base flex items-center space-x-2">
+          <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i>
+          <span>安排施作日程與派工</span>
+        </h3>
+        <button onclick="closeScheduleModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="schedule-form" onsubmit="handleScheduleFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="sched-case-id">
+        <div>
+          <p class="text-xs text-slate-500">案件名稱</p>
+          <p id="sched-client-display" class="font-bold text-sm text-slate-800">--</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">預計施作日期 *</label>
+            <input type="date" id="sched-work-date" required class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">開始時間 *</label>
+            <input type="time" id="sched-work-time" required value="09:30" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">負責業務</label>
+            <input type="text" id="sched-worker-sales" value="Frank" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">施做人員 (工班/領班)</label>
+            <input type="text" id="sched-worker-team" value="Frank / 師傅A" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">施作前現場備註</label>
+          <textarea id="sched-work-notes" rows="2" placeholder="例：預收款項 $10,500，需攜帶無塵刮刀與熱風槍..." class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+          <button type="submit" class="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">確認排程</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 浮動提示 Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 text-xs sm:text-sm flex items-center space-x-2">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-message">操作成功</span>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       系統預設範例資料與狀態管理
+       ========================================================================== */
+    const STORAGE_KEY = 'JIASHIDU_SUITE_DATA_V2';
+
+    // 初始示範資料（符合九月V2分潤與標準報價結構）
+    const INITIAL_SAMPLE_CASES = [
+      {
+        id: "AH2026110901",
+        clientName: "林育辰",
+        phone: "0912-345-678",
+        address: "新北市新莊區中平路100號 12樓",
+        taxId: "",
+        category: "A", // 貼膜
+        status: "SCHEDULED", // 已排施作
+        measureDate: "2026-11-09",
+        measureTime: "10:00",
+        workDate: "2026-11-15",
+        workTime: "09:30",
+        salesPerson: "Frank",
+        workers: "Frank / 師傅A",
+        notes: "主臥衛浴淋浴拉門貼膜（固+活片），需現場收尾款",
+        items: [
+          { name: "衛浴隔間玻璃 固", desc: "45cm * 180cm (約9才)", qty: 1, price: 5400, areaNote: "客浴" },
+          { name: "衛浴隔間玻璃 活", desc: "65cm * 180cm (約13才)", qty: 1, price: 7800, areaNote: "客浴" },
+          { name: "光觸媒防霉矽利康", desc: "衛浴全周圍防霉處理", qty: 1, price: 1800, areaNote: "全區" }
+        ],
+        addon: 0,
+        discount: 1000,
+        totalAmount: 14000
+      },
+      {
+        id: "AH2026110202",
+        clientName: "謝偉志",
+        phone: "0988-776-554",
+        address: "台北市南港區重陽路55號",
+        taxId: "83749281",
+        category: "A", // 貼膜
+        status: "COMPLETED", // 已完工驗收
+        measureDate: "2026-11-02",
+        measureTime: "14:00",
+        workDate: "2026-11-06",
+        workTime: "13:30",
+        salesPerson: "Frank",
+        workers: "Frank / 主管Alex",
+        notes: "全室淋浴隔間晶盾膜防護完成，驗收完畢",
+        items: [
+          { name: "雙衛浴隔間玻璃貼膜", desc: "共計約 38 才", qty: 1, price: 23000, areaNote: "主浴+客浴" }
+        ],
+        addon: 0,
+        discount: 0,
+        totalAmount: 23000
+      },
+      {
+        id: "AH2026102801",
+        clientName: "高國華",
+        phone: "0933-221-100",
+        address: "新北市板橋區文化路二段88號",
+        taxId: "",
+        category: "B", // 鍍膜
+        status: "COMPLETED",
+        measureDate: "2026-10-28",
+        measureTime: "11:00",
+        workDate: "2026-11-03",
+        workTime: "10:00",
+        salesPerson: "Frank",
+        workers: "Frank",
+        notes: "廚房人造石檯面+不銹鋼水槽高階晶盾鍍膜",
+        items: [
+          { name: "廚房流理檯面鍍膜", desc: "防油抗熱高硬度", qty: 1, price: 12000, areaNote: "廚房" },
+          { name: "雙水槽防污鍍膜", desc: "水垢阻絕處理", qty: 1, price: 4000, areaNote: "廚房" }
+        ],
+        addon: 0,
+        discount: 1000,
+        totalAmount: 15000
+      },
+      {
+        id: "AH2026111203",
+        clientName: "陳雅婷",
+        phone: "0972-110-889",
+        address: "桃園市中壢區高鐵南路二段",
+        taxId: "",
+        category: "A",
+        status: "PENDING_MEASURE", // 待丈量
+        measureDate: "2026-11-12",
+        measureTime: "15:00",
+        workDate: "",
+        workTime: "",
+        salesPerson: "Frank",
+        workers: "Frank",
+        notes: "新成屋剛交屋，需丈量2間衛浴隔間玻璃與廚房水槽",
+        items: [],
+        addon: 0,
+        discount: 0,
+        totalAmount: 0
+      }
+    ];
+
+    let appData = {
+      cases: []
+    };
+
+    // 當前正在報價編輯的暫存物件
+    let currentQuote = {
+      id: "",
+      clientName: "",
+      phone: "",
+      address: "",
+      taxId: "",
+      category: "A",
+      date: new Date().toISOString().split('T')[0],
+      items: [],
+      addon: 0,
+      discount: 0,
+      totalAmount: 0
+    };
+
+    /* ==========================================================================
+       初始化與生命週期
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      lucide.createIcons();
+      renderAllViews();
+      // 預設將第一筆或目前案件載入報價編輯器
+      if (appData.cases.length > 0) {
+        loadCaseIntoQuoteEditor(appData.cases[0].id);
+      }
+    });
+
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          appData = JSON.parse(stored);
+        } catch (e) {
+          appData = { cases: INITIAL_SAMPLE_CASES };
+        }
+      } else {
+        appData = { cases: INITIAL_SAMPLE_CASES };
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    /* ==========================================================================
+       視圖 Tab 切換
+       ========================================================================== */
+    function switchTab(tabKey) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+        btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+      });
+
+      // 桌面版按鈕高亮
+      const activeBtn = document.getElementById(`tab-btn-${tabKey}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+      }
+
+      // 手機版按鈕高亮
+      ['cases', 'quote', 'schedule', 'profit'].forEach(k => {
+        const mBtn = document.getElementById(`mobile-tab-${k}`);
+        if (mBtn) {
+          if (k === tabKey) {
+            mBtn.className = "flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-cyan-400 bg-slate-800 whitespace-nowrap";
+          } else {
+            mBtn.className = "flex-1 py-1.5 px-2 text-center text-xs font-medium rounded text-slate-400 hover:text-white whitespace-nowrap";
+          }
+        }
+      });
+
+      const targetView = document.getElementById(`view-${tabKey}`);
+      if (targetView) {
+        targetView.classList.remove('hidden');
+      }
+      lucide.createIcons();
+
+      if (tabKey === 'profit') {
+        renderProfitTable();
+      } else if (tabKey === 'schedule') {
+        renderScheduleCards();
+      }
+    }
+
+    function renderAllViews() {
+      renderCasesTable();
+      renderStats();
+      renderScheduleCards();
+      renderProfitTable();
+    }
+
+    /* ==========================================================================
+       模組 1：案件管理與預約丈量
+       ========================================================================== */
+    function renderStats() {
+      const cases = appData.cases;
+      const pendingMeasure = cases.filter(c => c.status === 'PENDING_MEASURE').length;
+      const scheduled = cases.filter(c => c.status === 'SCHEDULED').length;
+      const completed = cases.filter(c => c.status === 'COMPLETED').length;
+      const totalAmount = cases
+        .filter(c => c.status === 'COMPLETED')
+        .reduce((sum, c) => sum + (c.totalAmount || 0), 0);
+
+      document.getElementById('stat-pending-measure').innerText = pendingMeasure;
+      document.getElementById('stat-scheduled').innerText = scheduled;
+      document.getElementById('stat-completed').innerText = completed;
+      document.getElementById('stat-total-amount').innerText = '$' + totalAmount.toLocaleString();
+    }
+
+    function renderCasesTable() {
+      const tbody = document.getElementById('cases-tbody');
+      const search = (document.getElementById('case-search-input').value || '').toLowerCase();
+      const filterStatus = document.getElementById('case-status-filter').value;
+
+      const filtered = appData.cases.filter(c => {
+        const matchSearch = c.clientName.toLowerCase().includes(search) ||
+                            c.phone.toLowerCase().includes(search) ||
+                            c.id.toLowerCase().includes(search) ||
+                            c.address.toLowerCase().includes(search);
+        const matchStatus = filterStatus === 'ALL' || c.status === filterStatus;
+        return matchSearch && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">目前尚無符合的案件紀錄</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => {
+        const statusMap = {
+          PENDING_MEASURE: { label: '待丈量', class: 'bg-amber-100 text-amber-800 border-amber-200' },
+          QUOTED: { label: '已報價/待付定', class: 'bg-blue-100 text-blue-800 border-blue-200' },
+          SCHEDULED: { label: '已排施作', class: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+          COMPLETED: { label: '完工驗收', class: 'bg-emerald-100 text-emerald-800 border-emerald-200' }
+        };
+        const st = statusMap[c.status] || { label: c.status, class: 'bg-slate-100 text-slate-700' };
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4">
+              <div class="font-mono font-bold text-slate-900">${c.id}</div>
+              <div class="font-semibold text-slate-800 flex items-center space-x-1 mt-0.5">
+                <span>${c.clientName}</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded font-mono ${c.category === 'A' ? 'bg-orange-100 text-orange-800' : 'bg-cyan-100 text-cyan-800'}">
+                  ${c.category === 'A' ? '貼膜 A' : '鍍膜 B'}
+                </span>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="text-slate-800 truncate max-w-xs" title="${c.address}">${c.address}</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5">${c.phone}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="text-xs text-slate-700">
+                <span class="text-slate-400">丈量：</span>${c.measureDate} ${c.measureTime || ''}
+              </div>
+              ${c.workDate ? `
+                <div class="text-xs text-indigo-600 font-medium mt-0.5">
+                  <span class="text-slate-400">施工：</span>${c.workDate} ${c.workTime || ''}
+                </div>
+              ` : '<div class="text-xs text-slate-400 italic">未排施工</div>'}
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-800 font-mono">$${(c.totalAmount || 0).toLocaleString()}</div>
+              <div class="text-[11px] text-slate-400">30% 定金: $${Math.round((c.totalAmount || 0) * 0.3).toLocaleString()}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${st.class}">${st.label}</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="flex items-center justify-center space-x-1.5">
+                <!-- 進入報價 -->
+                <button onclick="loadCaseIntoQuoteEditor('${c.id}'); switchTab('quote');" title="前往報價單編輯" class="p-1.5 text-slate-600 hover:text-cyan-600 hover:bg-cyan-50 rounded transition">
+                  <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                </button>
+                <!-- 加入日曆 / TimeTree -->
+                <div class="relative inline-block text-left group">
+                  <button title="匯出行事曆 / TimeTree" class="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                  </button>
+                  <div class="hidden group-hover:block absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 z-30 py-1 text-left text-xs">
+                    <button onclick="openGoogleCalendar('${c.id}', 'measure')" class="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5">
+                      <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-500"></i>
+                      <span>加到 Google (丈量)</span>
+                    </button>
+                    ${c.workDate ? `
+                    <button onclick="openGoogleCalendar('${c.id}', 'work')" class="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5">
+                      <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-500"></i>
+                      <span>加到 Google (施工)</span>
+                    </button>
+                    ` : ''}
+                    <button onclick="downloadICS('${c.id}')" class="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5 border-t border-slate-100">
+                      <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-500"></i>
+                      <span>下載 .ics (TimeTree)</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- 安排施作 -->
+                <button onclick="openScheduleModal('${c.id}')" title="安排施工日程" class="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
+                  <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                </button>
+                <!-- 刪除 -->
+                <button onclick="deleteCase('${c.id}')" title="刪除案件" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function openNewCaseModal() {
+      document.getElementById('case-modal-title').innerHTML = `
+        <i data-lucide="calendar-plus" class="w-5 h-5 text-cyan-400"></i>
+        <span>新增家事鍍案件與預約丈量</span>
+      `;
+      document.getElementById('case-form').reset();
+      document.getElementById('form-case-id').value = "";
+      // 自動生成編號 AH + 西元年月日 + 序號
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const countToday = appData.cases.filter(c => c.id.startsWith(`AH${todayStr}`)).length + 1;
+      const newId = `AH${todayStr}${String(countToday).padStart(2, '0')}`;
+      
+      document.getElementById('form-measure-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('form-measure-time').value = "10:00";
+      document.getElementById('case-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeCaseModal() {
+      document.getElementById('case-modal').classList.add('hidden');
+    }
+
+    function handleCaseFormSubmit(e) {
+      e.preventDefault();
+      const existingId = document.getElementById('form-case-id').value;
+      const clientName = document.getElementById('form-client-name').value.trim();
+      const phone = document.getElementById('form-client-phone').value.trim();
+      const address = document.getElementById('form-client-addr').value.trim();
+      const measureDate = document.getElementById('form-measure-date').value;
+      const measureTime = document.getElementById('form-measure-time').value;
+      const category = document.getElementById('form-category-select').value;
+      const status = document.getElementById('form-status-select').value;
+      const notes = document.getElementById('form-case-notes').value.trim();
+
+      if (existingId) {
+        // 更新
+        const target = appData.cases.find(c => c.id === existingId);
+        if (target) {
+          target.clientName = clientName;
+          target.phone = phone;
+          target.address = address;
+          target.measureDate = measureDate;
+          target.measureTime = measureTime;
+          target.category = category;
+          target.status = status;
+          target.notes = notes;
+        }
+      } else {
+        // 新增
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const countToday = appData.cases.filter(c => c.id.startsWith(`AH${todayStr}`)).length + 1;
+        const newId = `AH${todayStr}${String(countToday).padStart(2, '0')}`;
+
+        const newCase = {
+          id: newId,
+          clientName,
+          phone,
+          address,
+          taxId: "",
+          category,
+          status,
+          measureDate,
+          measureTime,
+          workDate: "",
+          workTime: "",
+          salesPerson: "Frank",
+          workers: "Frank",
+          notes,
+          items: [],
+          addon: 0,
+          discount: 0,
+          totalAmount: 0
+        };
+        appData.cases.unshift(newCase);
+      }
+
+      saveData();
+      closeCaseModal();
+      renderAllViews();
+      showToast('案件資料已成功儲存！');
+    }
+
+    function deleteCase(id) {
+      if (!confirm(`確定要刪除單號 ${id} 的案件嗎？`)) return;
+      appData.cases = appData.cases.filter(c => c.id !== id);
+      saveData();
+      renderAllViews();
+      showToast('案件已刪除');
+    }
+
+    /* ==========================================================================
+       行事曆與 TimeTree 快速整合 (.ics 與 Google Calendar)
+       ========================================================================== */
+    function openGoogleCalendar(caseId, type = 'measure') {
+      const c = appData.cases.find(item => item.id === caseId);
+      if (!c) return;
+
+      let title = "";
+      let dateStr = "";
+      let timeStr = "";
+      let details = "";
+
+      if (type === 'measure') {
+        title = `【家事鍍丈量】${c.clientName} (${c.id})`;
+        dateStr = c.measureDate;
+        timeStr = c.measureTime || "10:00";
+        details = `單號：${c.id}\n客戶：${c.clientName}\n電話：${c.phone}\n地址：${c.address}\n備註：${c.notes || '現場丈量估價'}`;
+      } else {
+        title = `【家事鍍施工】${c.clientName} - ${c.category === 'A' ? '貼膜' : '鍍膜'} (尾款 $${Math.round((c.totalAmount || 0) * 0.7).toLocaleString()})`;
+        dateStr = c.workDate || c.measureDate;
+        timeStr = c.workTime || "09:30";
+        details = `單號：${c.id}\n客戶：${c.clientName}\n電話：${c.phone}\n地址：${c.address}\n施工人員：${c.workers || 'Frank'}\n應收尾款：$${Math.round((c.totalAmount || 0) * 0.7).toLocaleString()}`;
+      }
+
+      const startDateTime = new Date(`${dateStr}T${timeStr}:00`);
+      const endDateTime = new Date(startDateTime.getTime() + (type === 'measure' ? 60 : 180) * 60000); // 丈量1hr, 施工3hr
+
+      const fmt = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(startDateTime)}/${fmt(endDateTime)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(c.address)}`;
+      window.open(gcalUrl, '_blank');
+    }
+
+    function downloadICS(caseId) {
+      const c = appData.cases.find(item => item.id === caseId);
+      if (!c) return;
+
+      const dateStr = c.workDate || c.measureDate;
+      const timeStr = c.workTime || c.measureTime || "10:00";
+      const start = new Date(`${dateStr}T${timeStr}:00`);
+      const end = new Date(start.getTime() + 120 * 60000);
+
+      const fmt = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      const title = `【家事鍍】${c.clientName} - ${c.workDate ? '施工施作' : '現場丈量'}`;
+      const desc = `單號: ${c.id}\\n客戶: ${c.clientName}\\n電話: ${c.phone}\\n地址: ${c.address}\\n備註: ${c.notes || ''}\\n尾款: $${Math.round((c.totalAmount || 0) * 0.7).toLocaleString()}`;
+
+      const icsData = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Jiashidu//Operations Suite//TW",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        `UID:${c.id}-${Date.now()}@jiashidu.tw`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${desc}`,
+        `LOCATION:${c.address}`,
+        "STATUS:CONFIRMED",
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n");
+
+      const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', `${c.id}_TimeTree_Event.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('已下載 .ics 行事曆檔，可直接丟入 TimeTree 或手機行事曆！');
+    }
+
+    /* ==========================================================================
+       模組 2：現場丈量與即時報價單生成 (完全符合《★家事鍍報價單.xlsx》)
+       ========================================================================== */
+    function loadCaseIntoQuoteEditor(caseId) {
+      const c = appData.cases.find(item => item.id === caseId);
+      if (!c) return;
+
+      currentQuote = {
+        id: c.id,
+        clientName: c.clientName,
+        phone: c.phone,
+        address: c.address,
+        taxId: c.taxId || "",
+        category: c.category || "A",
+        date: c.measureDate || new Date().toISOString().slice(0, 10),
+        items: c.items && c.items.length > 0 ? JSON.parse(JSON.stringify(c.items)) : [
+          { name: "衛浴隔間玻璃 固", desc: "45cm * 180cm (約9才)", qty: 1, price: 5400, areaNote: "客浴" },
+          { name: "衛浴隔間玻璃 活", desc: "65cm * 180cm (約13才)", qty: 1, price: 7800, areaNote: "客浴" }
+        ],
+        addon: c.addon || 0,
+        discount: c.discount || 0,
+        totalAmount: c.totalAmount || 0
+      };
+
+      // 填入表單欄位
+      document.getElementById('quote-case-id').value = currentQuote.id;
+      document.getElementById('quote-case-date').value = currentQuote.date;
+      document.getElementById('quote-client-name').value = currentQuote.clientName;
+      document.getElementById('quote-client-phone').value = currentQuote.phone;
+      document.getElementById('quote-client-address').value = currentQuote.address;
+      document.getElementById('quote-client-taxid').value = currentQuote.taxId;
+      document.getElementById('quote-category').value = currentQuote.category;
+      document.getElementById('form-addon').value = currentQuote.addon;
+      document.getElementById('form-discount').value = currentQuote.discount;
+
+      renderQuoteItemRows();
+      calculateQuoteTotals();
+      syncQuotePreview();
+    }
+
+    function renderQuoteItemRows() {
+      const container = document.getElementById('quote-items-container');
+      container.innerHTML = currentQuote.items.map((it, idx) => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 relative group text-xs">
+          <button onclick="removeQuoteItemRow(${idx})" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+          <div class="grid grid-cols-12 gap-2">
+            <div class="col-span-5">
+              <label class="block font-medium text-slate-500 mb-0.5">施工項目</label>
+              <input type="text" value="${it.name}" oninput="updateQuoteItem(${idx}, 'name', this.value)" placeholder="例：衛浴隔間玻璃 固" class="w-full px-2 py-1 border border-slate-300 rounded bg-white font-semibold">
+            </div>
+            <div class="col-span-7">
+              <label class="block font-medium text-slate-500 mb-0.5">規格 / 尺寸 / 才數備註</label>
+              <input type="text" value="${it.desc}" oninput="updateQuoteItem(${idx}, 'desc', this.value)" placeholder="例：45cm * 180cm (約9才)" class="w-full px-2 py-1 border border-slate-300 rounded bg-white">
+            </div>
+          </div>
+          <div class="grid grid-cols-12 gap-2 items-center">
+            <div class="col-span-4">
+              <label class="block font-medium text-slate-500 mb-0.5">區域備註</label>
+              <input type="text" value="${it.areaNote || ''}" oninput="updateQuoteItem(${idx}, 'areaNote', this.value)" placeholder="例：主浴/客浴" class="w-full px-2 py-1 border border-slate-300 rounded bg-white">
+            </div>
+            <div class="col-span-3">
+              <label class="block font-medium text-slate-500 mb-0.5">數量</label>
+              <input type="number" value="${it.qty || 1}" min="1" oninput="updateQuoteItem(${idx}, 'qty', this.value)" class="w-full px-2 py-1 border border-slate-300 rounded bg-white text-center">
+            </div>
+            <div class="col-span-5">
+              <label class="block font-medium text-slate-500 mb-0.5">金額 (NT$)</label>
+              <input type="number" value="${it.price || 0}" oninput="updateQuoteItem(${idx}, 'price', this.value)" class="w-full px-2 py-1 border border-slate-300 rounded bg-white text-right font-mono font-bold text-slate-800">
+            </div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function addQuoteItemRow() {
+      currentQuote.items.push({
+        name: "晶盾膜施工 (才數計價)",
+        desc: "尺寸丈量試算",
+        qty: 1,
+        price: 3500,
+        areaNote: "浴室"
+      });
+      renderQuoteItemRows();
+      calculateQuoteTotals();
+      syncQuotePreview();
+    }
+
+    function removeQuoteItemRow(idx) {
+      currentQuote.items.splice(idx, 1);
+      renderQuoteItemRows();
+      calculateQuoteTotals();
+      syncQuotePreview();
+    }
+
+    function updateQuoteItem(idx, field, value) {
+      if (field === 'qty' || field === 'price') {
+        currentQuote.items[idx][field] = Number(value) || 0;
+      } else {
+        currentQuote.items[idx][field] = value;
+      }
+      calculateQuoteTotals();
+      syncQuotePreview();
+    }
+
+    function calculateQuoteTotals() {
+      const subtotal = currentQuote.items.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
+      const addon = Number(document.getElementById('form-addon').value) || 0;
+      const discount = Number(document.getElementById('form-discount').value) || 0;
+      const finalTotal = Math.max(0, subtotal + addon - discount);
+
+      currentQuote.addon = addon;
+      currentQuote.discount = discount;
+      currentQuote.totalAmount = finalTotal;
+
+      document.getElementById('form-subtotal').innerText = '$' + subtotal.toLocaleString();
+      document.getElementById('form-final-total').innerText = '$' + finalTotal.toLocaleString();
+      document.getElementById('form-deposit-display').innerText = '$' + Math.round(finalTotal * 0.3).toLocaleString();
+      document.getElementById('form-balance-display').innerText = '$' + Math.round(finalTotal * 0.7).toLocaleString();
+
+      syncQuotePreview();
+    }
+
+    function syncQuotePreview() {
+      // 同步右側預覽畫面
+      document.getElementById('preview-quote-id').innerText = document.getElementById('quote-case-id').value || 'AH2026110901';
+      document.getElementById('preview-quote-date').innerText = document.getElementById('quote-case-date').value || '2026/11/09';
+      document.getElementById('preview-client-name').innerText = document.getElementById('quote-client-name').value || '--';
+      document.getElementById('preview-client-phone').innerText = document.getElementById('quote-client-phone').value || '--';
+      document.getElementById('preview-client-address').innerText = document.getElementById('quote-client-address').value || '--';
+      document.getElementById('preview-client-taxid').innerText = document.getElementById('quote-client-taxid').value || '--';
+
+      const tbody = document.getElementById('preview-items-tbody');
+      if (currentQuote.items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400">尚未新增施工丈量項目</td></tr>`;
+      } else {
+        tbody.innerHTML = currentQuote.items.map(it => `
+          <tr class="border-b border-slate-200">
+            <td class="border border-slate-300 p-2 font-medium text-slate-900">${it.name} ${it.areaNote ? `<span class="text-[10px] text-slate-500">(${it.areaNote})</span>` : ''}</td>
+            <td class="border border-slate-300 p-2 text-slate-600">${it.desc || '-'}</td>
+            <td class="border border-slate-300 p-2 text-center font-mono">${it.qty || 1}</td>
+            <td class="border border-slate-300 p-2 text-right font-mono font-semibold">$${((it.price || 0) * (it.qty || 1)).toLocaleString()}</td>
+          </tr>
+        `).join('');
+      }
+
+      const subtotal = currentQuote.items.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
+      const addon = Number(document.getElementById('form-addon').value) || 0;
+      const discount = Number(document.getElementById('form-discount').value) || 0;
+      const finalTotal = Math.max(0, subtotal + addon - discount);
+
+      document.getElementById('preview-subtotal').innerText = '$' + subtotal.toLocaleString();
+      document.getElementById('preview-addon').innerText = '$' + addon.toLocaleString();
+      document.getElementById('preview-discount').innerText = '-$' + discount.toLocaleString();
+      document.getElementById('preview-final').innerText = '$' + finalTotal.toLocaleString();
+      document.getElementById('preview-deposit').innerText = '$' + Math.round(finalTotal * 0.3).toLocaleString();
+      document.getElementById('preview-balance').innerText = '$' + Math.round(finalTotal * 0.7).toLocaleString();
+    }
+
+    function saveCurrentQuoteToCase() {
+      const caseId = document.getElementById('quote-case-id').value;
+      const target = appData.cases.find(c => c.id === caseId);
+      if (!target) {
+        showToast('找不到該案件編號！');
+        return;
+      }
+
+      target.clientName = document.getElementById('quote-client-name').value;
+      target.phone = document.getElementById('quote-client-phone').value;
+      target.address = document.getElementById('quote-client-address').value;
+      target.taxId = document.getElementById('quote-client-taxid').value;
+      target.category = document.getElementById('quote-category').value;
+      target.items = JSON.parse(JSON.stringify(currentQuote.items));
+      target.addon = currentQuote.addon;
+      target.discount = currentQuote.discount;
+      target.totalAmount = currentQuote.totalAmount;
+      if (target.status === 'PENDING_MEASURE') {
+        target.status = 'QUOTED'; // 報價完成
+      }
+
+      saveData();
+      renderAllViews();
+      showToast('報價單已成功更新並回寫至案件！');
+    }
+
+    function loadSampleQuoteData() {
+      currentQuote.items = [
+        { name: "衛浴隔間玻璃 固", desc: "45cm * 180cm (約9才)", qty: 1, price: 5400, areaNote: "客浴" },
+        { name: "衛浴隔間玻璃 活", desc: "65cm * 180cm (約13才)", qty: 1, price: 7800, areaNote: "客浴" },
+        { name: "光觸媒防霉矽利康", desc: "衛浴全周圍防霉處理", qty: 1, price: 1800, areaNote: "全區" }
+      ];
+      document.getElementById('form-addon').value = 0;
+      document.getElementById('form-discount').value = 1000;
+      renderQuoteItemRows();
+      calculateQuoteTotals();
+      syncQuotePreview();
+      showToast('已載入九月份標準報價範例項目！');
+    }
+
+    function printQuotation() {
+      window.print();
+    }
+
+    /* ==========================================================================
+       模組 3：預約施作排程
+       ========================================================================== */
+    function renderScheduleCards() {
+      const container = document.getElementById('scheduled-cards-container');
+      const activeCases = appData.cases.filter(c => c.status === 'SCHEDULED' || c.status === 'QUOTED' || c.status === 'PENDING_MEASURE');
+
+      if (activeCases.length === 0) {
+        container.innerHTML = `<div class="col-span-full bg-white p-8 rounded-xl border border-slate-200 text-center text-slate-400">目前沒有需要排程或施作中的案件</div>`;
+        return;
+      }
+
+      container.innerHTML = activeCases.map(c => `
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-bold px-2 py-0.5 rounded ${c.category === 'A' ? 'bg-orange-100 text-orange-800' : 'bg-cyan-100 text-cyan-800'}">
+                ${c.id} · ${c.category === 'A' ? '貼膜 A' : '鍍膜 B'}
+              </span>
+              <span class="text-xs font-bold ${c.status === 'SCHEDULED' ? 'text-indigo-600' : 'text-amber-600'}">
+                ${c.status === 'SCHEDULED' ? '已排定施工' : '待確認排程'}
+              </span>
+            </div>
+            <h3 class="font-bold text-base text-slate-800 mt-2">${c.clientName} <span class="text-xs font-normal text-slate-500">(${c.phone})</span></h3>
+            <p class="text-xs text-slate-600 mt-1 truncate">${c.address}</p>
+
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-3 text-xs space-y-1">
+              <div class="flex justify-between">
+                <span class="text-slate-500">施作日期：</span>
+                <span class="font-semibold text-slate-800">${c.workDate ? `${c.workDate} ${c.workTime || ''}` : '尚未排定'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">負責工班：</span>
+                <span class="text-slate-800">${c.workers || 'Frank'}</span>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-slate-200">
+                <span class="text-slate-500">總金額 / 尾款：</span>
+                <span class="font-mono font-bold text-slate-900">$${(c.totalAmount || 0).toLocaleString()} <span class="text-indigo-600">($${Math.round((c.totalAmount || 0)*0.7).toLocaleString()})</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <button onclick="openScheduleModal('${c.id}')" class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition flex items-center justify-center space-x-1">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              <span>調整排程</span>
+            </button>
+            <button onclick="downloadICS('${c.id}')" title="加入 TimeTree" class="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs rounded-lg transition">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+            </button>
+            <button onclick="markAsCompleted('${c.id}')" class="flex-1 py-1.5 px-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center justify-center space-x-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>完工結算</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openScheduleModal(caseId) {
+      const c = appData.cases.find(item => item.id === caseId);
+      if (!c) return;
+
+      document.getElementById('sched-case-id').value = c.id;
+      document.getElementById('sched-client-display').innerText = `${c.clientName} (${c.id}) - ${c.address}`;
+      document.getElementById('sched-work-date').value = c.workDate || new Date().toISOString().slice(0, 10);
+      document.getElementById('sched-work-time').value = c.workTime || "09:30";
+      document.getElementById('sched-worker-sales').value = c.salesPerson || "Frank";
+      document.getElementById('sched-worker-team').value = c.workers || "Frank";
+      document.getElementById('sched-work-notes').value = c.notes || "";
+
+      document.getElementById('schedule-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('schedule-modal').classList.add('hidden');
+    }
+
+    function handleScheduleFormSubmit(e) {
+      e.preventDefault();
+      const caseId = document.getElementById('sched-case-id').value;
+      const target = appData.cases.find(c => c.id === caseId);
+      if (!target) return;
+
+      target.workDate = document.getElementById('sched-work-date').value;
+      target.workTime = document.getElementById('sched-work-time').value;
+      target.salesPerson = document.getElementById('sched-worker-sales').value;
+      target.workers = document.getElementById('sched-worker-team').value;
+      target.notes = document.getElementById('sched-work-notes').value;
+      target.status = 'SCHEDULED';
+
+      saveData();
+      closeScheduleModal();
+      renderAllViews();
+      showToast('施作排程已建立！可隨時匯出至 TimeTree 或 Google 日曆。');
+    }
+
+    function markAsCompleted(caseId) {
+      const target = appData.cases.find(c => c.id === caseId);
+      if (!target) return;
+      if (!confirm(`確定單號 ${caseId} (${target.clientName}) 已經完工並驗收收訖尾款嗎？將自動計入分潤表。`)) return;
+
+      target.status = 'COMPLETED';
+      saveData();
+      renderAllViews();
+      showToast('案件已標記為完工驗收，已自動列入本月分潤表！');
+    }
+
+    /* ==========================================================================
+       模組 4：月度施作分潤自動核算 (嚴格依據《H九月初家事鍍業務經銷分潤表V2.xlsx》)
+       ========================================================================== */
+    function renderProfitTable() {
+      const tbody = document.getElementById('profit-tbody');
+      const completedCases = appData.cases.filter(c => c.status === 'COMPLETED');
+
+      let grossSum = 0;
+      let totalFrank = 0;
+      let totalAlex = 0;
+
+      if (completedCases.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400">目前尚無已完工案件，請先在案件列表完成驗收</td></tr>`;
+        document.getElementById('profit-stat-gross').innerText = "$0";
+        document.getElementById('profit-stat-frank').innerText = "$0";
+        document.getElementById('profit-stat-alex').innerText = "$0";
+        document.getElementById('profit-case-count').innerText = "共 0 場次";
+        return;
+      }
+
+      let rowsHtml = "";
+
+      completedCases.forEach((c) => {
+        const amount = c.totalAmount || 0;
+        grossSum += amount;
+        const isFilmA = c.category === 'A'; // A 類貼膜 vs B 類鍍膜
+
+        /* 
+           依據 V2 分潤表核心公式拆分：
+           1. 公司行：
+              - 貼膜A: 公司 0.40, 案件來源 0.10, 來源隸屬 0.05 => 合計 0.55
+              - 鍍膜B: 公司 0.35, 案件來源 0.10, 來源隸屬 0.05 => 合計 0.50
+           2. 業務兼施做行 (Frank)：
+              - 貼膜A: 地區業務 0.15, 領班 0.05 => 合計%數 0.20
+              - 鍍膜B: 地區業務 0.20, 領班 0.05 => 合計%數 0.25
+              - 施做獎金: 施做金額 * 0.10 (貼膜主做) 或 * 0.10
+           3. 主管行 (Alex)：
+              - 地區主管: 0.05
+              - 施做獎金: 視工班指派 (若Alex協作施做約10%，或0)
+        */
+
+        const compRate = isFilmA ? 0.55 : 0.50; // 公司+來源+隸屬
+        const compBonus = Math.round(amount * compRate);
+
+        const frankPercentRate = isFilmA ? 0.20 : 0.25; // 業務 + 領班
+        const frankPercentBonus = Math.round(amount * frankPercentRate);
+        const frankWorkBase = amount;
+        const frankWorkRate = 0.10; // 施做獎金趴數 10%
+        const frankWorkBonus = Math.round(frankWorkBase * frankWorkRate);
+        const frankTotal = frankPercentBonus + frankWorkBonus;
+        totalFrank += frankTotal;
+
+        const alexPercentRate = 0.05; // 地區主管 5%
+        const alexPercentBonus = Math.round(amount * alexPercentRate);
+        const hasAlexWork = (c.workers || '').includes('Alex');
+        const alexWorkBase = hasAlexWork ? amount : 0;
+        const alexWorkRate = hasAlexWork ? 0.10 : 0.00;
+        const alexWorkBonus = Math.round(alexWorkBase * alexWorkRate);
+        const alexTotal = alexPercentBonus + alexWorkBonus;
+        totalAlex += alexTotal;
+
+        // 輸出對應 Excel 的 3 列結構
+        rowsHtml += `
+          <!-- 第 1 列：公司/案件來源底層 -->
+          <tr class="bg-white border-t-2 border-slate-300 hover:bg-slate-50 font-mono">
+            <td rowspan="3" class="p-3 border border-slate-200 align-top bg-slate-50">
+              <div class="font-bold text-slate-900">${c.id}</div>
+              <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${isFilmA ? 'bg-orange-100 text-orange-800' : 'bg-cyan-100 text-cyan-800'} mt-1">
+                ${isFilmA ? '貼膜 (A)' : '鍍膜 (B)'}
+              </span>
+            </td>
+            <td rowspan="3" class="p-3 border border-slate-200 align-top">
+              <div class="font-bold text-slate-800 font-sans">${c.clientName}</div>
+              <div class="text-[11px] text-slate-500 font-sans truncate max-w-[160px]">${c.notes || c.address}</div>
+            </td>
+            <td rowspan="3" class="p-3 border border-slate-200 align-top text-right font-bold text-slate-900">
+              $${amount.toLocaleString()}
+            </td>
+            <td class="p-2 border border-slate-200 text-slate-600 font-sans">公司 / 案件來源</td>
+            <td class="p-2 border border-slate-200 text-slate-700 font-sans">巧好運實業</td>
+            <td class="p-2 border border-slate-200 text-center text-slate-700">${(compRate * 100).toFixed(0)}%</td>
+            <td class="p-2 border border-slate-200 text-right font-semibold text-slate-800">$${compBonus.toLocaleString()}</td>
+            <td class="p-2 border border-slate-200 text-right text-slate-400">--</td>
+            <td class="p-2 border border-slate-200 text-center text-slate-400">--</td>
+            <td class="p-2 border border-slate-200 text-right text-slate-400">--</td>
+            <td class="p-2 border border-slate-200 text-right font-bold text-slate-800">$${compBonus.toLocaleString()}</td>
+          </tr>
+
+          <!-- 第 2 列：地區業務與施做 (Frank) -->
+          <tr class="bg-cyan-50/30 hover:bg-cyan-50/60 font-mono">
+            <td class="p-2 border border-slate-200 text-cyan-900 font-sans font-medium">業務 + 領班</td>
+            <td class="p-2 border border-slate-200 text-cyan-950 font-sans font-bold">Frank</td>
+            <td class="p-2 border border-slate-200 text-center text-cyan-900">${(frankPercentRate * 100).toFixed(0)}%</td>
+            <td class="p-2 border border-slate-200 text-right text-cyan-900">$${frankPercentBonus.toLocaleString()}</td>
+            <td class="p-2 border border-slate-200 text-right text-slate-700">$${frankWorkBase.toLocaleString()}</td>
+            <td class="p-2 border border-slate-200 text-center text-slate-700">${(frankWorkRate * 100).toFixed(0)}%</td>
+            <td class="p-2 border border-slate-200 text-right font-semibold text-cyan-800">$${frankWorkBonus.toLocaleString()}</td>
+            <td class="p-2 border border-slate-200 text-right font-bold text-cyan-700 bg-cyan-100/50">$${frankTotal.toLocaleString()}</td>
+          </tr>
+
+          <!-- 第 3 列：地區主管 (Alex) -->
+          <tr class="bg-purple-50/30 hover:bg-purple-50/60 font-mono">
+            <td class="p-2 border border-slate-200 text-purple-900 font-sans font-medium">地區主管</td>
+            <td class="p-2 border border-slate-200 text-purple-950 font-sans font-bold">Alex</td>
+            <td class="p-2 border border-slate-200 text-center text-purple-900">${(alexPercentRate * 100).toFixed(0)}%</td>
+            <td class="p-2 border border-slate-200 text-right text-purple-900">$${alexPercentBonus.toLocaleString()}</td>
+            <td class="p-2 border border-slate-200 text-right text-slate-700">${alexWorkBase > 0 ? '$' + alexWorkBase.toLocaleString() : '--'}</td>
+            <td class="p-2 border border-slate-200 text-center text-slate-700">${alexWorkRate > 0 ? (alexWorkRate * 100).toFixed(0) + '%' : '--'}</td>
+            <td class="p-2 border border-slate-200 text-right font-semibold text-purple-800">${alexWorkBonus > 0 ? '$' + alexWorkBonus.toLocaleString() : '$0'}</td>
+            <td class="p-2 border border-slate-200 text-right font-bold text-purple-700 bg-purple-100/50">$${alexTotal.toLocaleString()}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = rowsHtml;
+      document.getElementById('profit-stat-gross').innerText = '$' + grossSum.toLocaleString();
+      document.getElementById('profit-stat-frank').innerText = '$' + totalFrank.toLocaleString();
+      document.getElementById('profit-stat-alex').innerText = '$' + totalAlex.toLocaleString();
+      document.getElementById('profit-case-count').innerText = `共 ${completedCases.length} 場次完工`;
+    }
+
+    // 複製為 Excel 貼上格式 (TSV)
+    function copyProfitTableToClipboard() {
+      const completedCases = appData.cases.filter(c => c.status === 'COMPLETED');
+      if (completedCases.length === 0) {
+        showToast('目前尚無已完工案件可複製！');
+        return;
+      }
+
+      let tsv = "單號\t客戶\t消費金額\t身分\t人員\t合計%數\t%數獎金\t施做金額\t施做%\t施做獎金\t實領總計\n";
+
+      completedCases.forEach(c => {
+        const amt = c.totalAmount || 0;
+        const isFilmA = c.category === 'A';
+        const compRate = isFilmA ? 0.55 : 0.50;
+        const compBonus = Math.round(amt * compRate);
+
+        const frankRate = isFilmA ? 0.20 : 0.25;
+        const frankPercent = Math.round(amt * frankRate);
+        const frankWork = Math.round(amt * 0.10);
+        const frankTot = frankPercent + frankWork;
+
+        const alexRate = 0.05;
+        const alexPercent = Math.round(amt * alexRate);
+        const hasAlexWork = (c.workers || '').includes('Alex');
+        const alexWork = hasAlexWork ? Math.round(amt * 0.10) : 0;
+        const alexTot = alexPercent + alexWork;
+
+        tsv += `${c.id}\t${c.clientName}\t${amt}\t公司/來源\t巧好運實業\t${compRate}\t${compBonus}\t0\t0\t0\t${compBonus}\n`;
+        tsv += `${c.id}\t${c.clientName}\t${amt}\t業務領班\tFrank\t${frankRate}\t${frankPercent}\t${amt}\t0.1\t${frankWork}\t${frankTot}\n`;
+        tsv += `${c.id}\t${c.clientName}\t${amt}\t地區主管\tAlex\t${alexRate}\t${alexPercent}\t${hasAlexWork ? amt : 0}\t${hasAlexWork ? 0.1 : 0}\t${alexWork}\t${alexTot}\n`;
+      });
+
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = tsv;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+
+      showToast('已複製標準 TSV 格式！可直接在 Excel 按 Ctrl+V 貼上');
+    }
+
+    // 匯出 CSV 檔案
+    function exportProfitCSV() {
+      const completedCases = appData.cases.filter(c => c.status === 'COMPLETED');
+      if (completedCases.length === 0) {
+        showToast('目前尚無已完工資料可匯出！');
+        return;
+      }
+
+      let csv = "\uFEFF單號,客戶,類別,消費金額,身分,人員,合計%數,%數提成,施做金額,施做%,施做獎金,實領總計\n";
+
+      completedCases.forEach(c => {
+        const amt = c.totalAmount || 0;
+        const isFilmA = c.category === 'A';
+        const typeStr = isFilmA ? '貼膜A' : '鍍膜B';
+        const compRate = isFilmA ? 0.55 : 0.50;
+        const compBonus = Math.round(amt * compRate);
+
+        const frankRate = isFilmA ? 0.20 : 0.25;
+        const frankPercent = Math.round(amt * frankRate);
+        const frankWork = Math.round(amt * 0.10);
+        const frankTot = frankPercent + frankWork;
+
+        const alexRate = 0.05;
+        const alexPercent = Math.round(amt * alexRate);
+        const hasAlexWork = (c.workers || '').includes('Alex');
+        const alexWork = hasAlexWork ? Math.round(amt * 0.10) : 0;
+        const alexTot = alexPercent + alexWork;
+
+        csv += `"${c.id}","${c.clientName}","${typeStr}",${amt},"公司/來源","巧好運實業",${compRate},${compBonus},0,0,0,${compBonus}\n`;
+        csv += `"${c.id}","${c.clientName}","${typeStr}",${amt},"業務領班","Frank",${frankRate},${frankPercent},${amt},0.1,${frankWork},${frankTot}\n`;
+        csv += `"${c.id}","${c.clientName}","${typeStr}",${amt},"地區主管","Alex",${alexRate},${alexPercent},${hasAlexWork ? amt : 0},${hasAlexWork ? 0.1 : 0},${alexWork},${alexTot}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `家事鍍業務經銷分潤明細_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('分潤 CSV 檔案已成功下載！');
+    }
+  </script>
+</body>
+</html>
