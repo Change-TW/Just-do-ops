@@ -36,6 +36,11 @@
         <button onclick="switchTab('profit-calc')" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100" data-tab="profit-calc">
           <i class="fa-solid fa-coins mr-1"></i>本月分潤
         </button>
+        <!-- 夥伴專屬個人設定按鈕 -->
+        <button onclick="openProfileModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1" title="業務個人獨立設定">
+          <i class="fa-solid fa-user-gear text-cyan-700"></i>
+          <span id="nav-user-name" class="font-mono">Frank (AH)</span>
+        </button>
       </div>
     </div>
   </header>
@@ -54,7 +59,7 @@
           <div>
             <h3 class="font-bold text-sm sm:text-base flex items-center">
               <span>TimeTree / 手機日曆 Webcal 訂閱網址</span>
-              <span class="ml-2 text-[10px] bg-emerald-950/40 px-2 py-0.5 rounded font-mono font-bold">RFC 5545 協定</span>
+              <span class="ml-2 text-[10px] bg-emerald-950/40 px-2 py-0.5 rounded font-mono font-bold" id="badge-calendar-file">calendar_ah.ics</span>
             </h3>
             <p class="text-xs text-emerald-100 mt-0.5" id="webcal-desc-text">
               載入中...
@@ -68,7 +73,7 @@
           </button>
           <button onclick="downloadCalendarICS()" class="flex-1 sm:flex-none bg-emerald-950/40 hover:bg-emerald-950/60 border border-white/20 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1" title="更新/下載 calendar.ics 檔案放置 GitHub 倉庫">
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>更新 calendar.ics</span>
+            <span id="btn-ics-label">更新 calendar_ah.ics</span>
           </button>
           <button onclick="openNewJobModal()" class="flex-1 sm:flex-none bg-cyan-500 hover:bg-cyan-600 text-white px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shadow-sm">
             <i class="fa-solid fa-plus"></i>
@@ -95,7 +100,7 @@
           <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-xs">
               <tr>
-                <th class="p-4">單號 (日期+序號)</th>
+                <th class="p-4">單號 (代號+日期+序號)</th>
                 <th class="p-4">客戶 / 聯絡電話</th>
                 <th class="p-4">施工項目與預估</th>
                 <th class="p-4">丈量 / 施工排程</th>
@@ -114,7 +119,7 @@
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">現場丈量與報價單生成</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">單號自動串聯丈量日與場次序號 ｜ 每項支援固/活雙組尺寸，才數四捨五入 × 350元自動試算</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">單號前兩碼對應業務專屬單號 ｜ 每項支援固/活雙組尺寸，才數四捨五入 × 350元自動試算</p>
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
@@ -133,14 +138,14 @@
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3.5">
           <h3 class="font-bold text-slate-800 border-b pb-2 text-sm flex items-center justify-between">
             <span>客戶與單號資訊</span>
-            <span class="text-[11px] text-cyan-600 font-mono">自動對應當日場次</span>
+            <span class="text-[11px] text-cyan-600 font-mono" id="q-prefix-badge">業務代號對應中</span>
           </h3>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">預約丈量日期與時間</label>
             <input type="datetime-local" id="q-measure-date" onchange="onMeasureDateChange()" class="w-full border border-cyan-200 bg-cyan-50/40 rounded-lg p-2 text-xs font-bold text-cyan-900" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">訂單編號 (AH + 年月日 + 場次)</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">訂單編號 (<span id="label-prefix-display">AH</span> + 年月日 + 場次)</label>
             <input type="text" id="q-id" class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-xs font-mono font-black text-cyan-800" readonly />
           </div>
           <div>
@@ -221,7 +226,7 @@
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">月度施作分潤中心</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">自動拆分公司、業務 Frank、主管 Alex 趴數與施做獎金</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">自動拆分公司、業務、主管趴數與施做獎金</p>
         </div>
         <div class="flex items-center space-x-2 w-full sm:w-auto">
           <button onclick="copyProfitTableToClipboard()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center justify-center space-x-1.5">
@@ -245,10 +250,10 @@
                 <th class="p-3 text-right">總金額</th>
                 <th class="p-3 text-center">類別</th>
                 <th class="p-3 text-right">公司抽成</th>
-                <th class="p-3 text-right">Frank 業務提成</th>
-                <th class="p-3 text-right">Frank 施做獎金</th>
-                <th class="p-3 text-right font-black text-cyan-900">Frank 實領</th>
-                <th class="p-3 text-right font-black text-slate-900">Alex 實領</th>
+                <th class="p-3 text-right"><span id="col-user-sales">業務</span> 提成</th>
+                <th class="p-3 text-right"><span id="col-user-bonus">施做</span> 獎金</th>
+                <th class="p-3 text-right font-black text-cyan-900"><span id="col-user-total">業務</span> 實領</th>
+                <th class="p-3 text-right font-black text-slate-900"><span id="col-supervisor-total">主管</span> 實領</th>
               </tr>
             </thead>
             <tbody id="profit-table-body" class="divide-y divide-slate-200 font-mono"></tbody>
@@ -258,6 +263,49 @@
     </section>
 
   </main>
+
+  <!-- ========================================== -->
+  <!-- 夥伴個人設定彈窗 (業務專屬單號設定) -->
+  <!-- ========================================== -->
+  <div id="profile-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-user-gear text-cyan-600 text-lg"></i>
+          <h3 class="font-bold text-slate-800 text-base">業務人員專屬設定</h3>
+        </div>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">業務姓名（顯示於報價單與分潤表）</label>
+          <input type="text" id="prof-name" placeholder="例如：Frank、Leo、阿豪" class="w-full border rounded-lg p-2 font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">業務專屬單號代碼（前兩碼英文字母）</label>
+          <input type="text" id="prof-code" maxlength="4" placeholder="例如：AH、BH、CH..." class="w-full border rounded-lg p-2 font-mono font-black uppercase text-cyan-800" />
+          <span class="text-[10px] text-slate-400">例：設定 AH，單號前兩碼即為 AH（如 AH2026112101），完全對齊業務分潤表專屬代號。</span>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">聯絡電話</label>
+          <input type="tel" id="prof-phone" placeholder="09xxxxxxxx" class="w-full border rounded-lg p-2 font-mono" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">直屬地區主管</label>
+          <input type="text" id="prof-supervisor" value="Alex" class="w-full border rounded-lg p-2 font-bold" />
+        </div>
+      </div>
+
+      <div class="pt-2 flex space-x-2">
+        <button onclick="saveProfile()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-sm">
+          儲存設定
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================== -->
   <!-- 生成報價單的彈出式視窗 (Modal View) -->
@@ -427,6 +475,15 @@
   </div>
 
   <script>
+    // 方案 A 核心：專屬業務代碼與個人資料
+    let userProfile = JSON.parse(localStorage.getItem('jiashidu_user_profile')) || {
+      name: 'Frank',
+      code: 'AH', // 專屬業務代號 (前兩碼)
+      phone: '0912345678',
+      supervisor: 'Alex'
+    };
+
+    // 案場資料
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [
       {
         id: 'AH2026112101',
@@ -453,10 +510,12 @@
       }
     ];
 
+    // 動態單號產生：業務專屬代號(如 AH) + 丈量年月日(如 20261121) + 當日場次序號(如 01)
     function generateOrderIdByDate(dateTimeStr, currentJobId = null) {
       if (!dateTimeStr) dateTimeStr = new Date().toISOString().slice(0, 16);
       const parts = dateTimeStr.split('T')[0].split('-');
       const yyyymmdd = parts.join('');
+      const pfx = (userProfile.code || 'AH').toUpperCase();
 
       const sameDayJobs = jobs.filter(j => {
         if (currentJobId && j.id === currentJobId) return false;
@@ -466,7 +525,7 @@
       });
 
       const nextSeq = String(sameDayJobs.length + 1).padStart(2, '0');
-      return `AH${yyyymmdd}${nextSeq}`;
+      return `${pfx}${yyyymmdd}${nextSeq}`;
     }
 
     function switchTab(tabId) {
@@ -859,13 +918,12 @@
       document.getElementById('quote-modal').classList.add('hidden');
     }
 
-    // 核心技術：產生國際標準 RFC 5545 iCalendar 內容
     function buildFullICS() {
       let ics = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
         'PRODID:-//Jiashidu//OpsSuite//TW',
-        'X-WR-CALNAME:家事鍍排程',
+        `X-WR-CALNAME:家事鍍排程 (${userProfile.name})`,
         'X-WR-TIMEZONE:Asia/Taipei',
         'CALSCALE:GREGORIAN'
       ];
@@ -885,7 +943,7 @@
         ics.push(`DTSTART:${start}`);
         ics.push(`DTEND:${end}`);
         ics.push(`LOCATION:${j.address || '施工現場'}`);
-        ics.push(`DESCRIPTION:單號：${j.id}\\n客戶：${j.client}\\n電話：${j.phone}\\n狀態：${j.status}`);
+        ics.push(`DESCRIPTION:單號：${j.id}\\n業務：${userProfile.name} (${userProfile.code})\\n客戶：${j.client}\\n電話：${j.phone}\\n狀態：${j.status}`);
         ics.push('STATUS:CONFIRMED');
         ics.push('END:VEVENT');
       });
@@ -893,9 +951,12 @@
       return ics.join('\r\n');
     }
 
-    // 取得當前網址對應的 webcal:// 網址
+    function getIcsFileName() {
+      const code = (userProfile.code || 'ah').toLowerCase();
+      return `calendar_${code}.ics`;
+    }
+
     function getWebcalUrl() {
-      // 取得當前 URL 目錄路徑，去除 index.html，指向 calendar.ics
       let cur = window.location.href.split('#')[0].split('?')[0];
       if (cur.endsWith('index.html')) {
         cur = cur.substring(0, cur.lastIndexOf('index.html'));
@@ -903,39 +964,37 @@
       if (!cur.endsWith('/')) {
         cur += '/';
       }
-      const icsUrl = cur + 'calendar.ics';
-      // 將 https:// 轉換為 webcal://
+      const icsUrl = cur + getIcsFileName();
       return icsUrl.replace(/^https?:\/\//i, 'webcal://');
     }
 
-    // 複製 Webcal 訂閱網址 (相容 TimeTree / iOS / Android)
     function copyWebcalUrl() {
       const url = getWebcalUrl();
       navigator.clipboard.writeText(url).then(() => {
-        alert(`✅ 已複製 Webcal 訂閱網址！\n\n【訂閱網址】：\n${url}\n\n【TimeTree 訂閱方式】：\n1. 打開 TimeTree App\n2. 點擊「設定」→「外部日曆」→「由網址訂閱日曆」\n3. 貼上此網址即可！\n\n（註：請記得點擊右方「更新 calendar.ics」並推送到 GitHub 根目錄，讓伺服器維持最新行程）`);
+        alert(`✅ 已複製【${userProfile.name} (${userProfile.code})】專屬 Webcal 訂閱網址！\n\n【訂閱網址】：\n${url}\n\n【TimeTree 訂閱方式】：\n1. 打開 TimeTree App\n2. 點擊「設定」→「外部日曆」→「由網址訂閱日曆」\n3. 貼上此專屬網址即可！`);
       }).catch(() => {
-        prompt("請手動複製以下 Webcal 訂閱網址：", url);
+        prompt("請手動複製專屬 Webcal 訂閱網址：", url);
       });
     }
 
-    // 下載 / 更新 calendar.ics 檔案供上傳至 GitHub 倉庫根目錄
     function downloadCalendarICS() {
       const icsString = buildFullICS();
+      const filename = getIcsFileName();
       const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.setAttribute('download', 'calendar.ics');
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      alert("已為您下載最新【calendar.ics】檔案！\n\n只需將這個檔案上傳到你存放 index.html 的 GitHub 儲存庫根目錄中，TimeTree 就會自動透過 Webcal 網址永久連動更新！");
+      alert(`已為您下載【${filename}】！\n\n請將此檔案上傳至 GitHub 儲存庫根目錄，${userProfile.name} (${userProfile.code}) 的專屬 TimeTree 就會永久保持連動更新！`);
     }
 
     function openNewJobModal() {
       const name = prompt("請輸入客戶姓名：");
       if (!name) return;
-      const phone = prompt("請輸入聯絡電話：", "09");
+      const phone = prompt("請輸入聯絡電話：", userProfile.phone || "09");
       const addr = prompt("請輸入施工地址：");
       const mDate = prompt("預約丈量時間 (格式: 2026-11-21T08:00)：", new Date().toISOString().slice(0, 16));
 
@@ -964,7 +1023,7 @@
       });
       localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
       renderJobList();
-      alert(`✅ 案場建立成功！\n單號為：${newId}`);
+      alert(`✅ 案場建立成功！\n單號為：${newId} (${userProfile.code} 專屬)`);
     }
 
     function markJobStatus(idx) {
@@ -983,6 +1042,11 @@
     function renderProfitTable() {
       const tbody = document.getElementById('profit-table-body');
       tbody.innerHTML = '';
+
+      document.getElementById('col-user-sales').innerText = userProfile.name;
+      document.getElementById('col-user-bonus').innerText = userProfile.name;
+      document.getElementById('col-user-total').innerText = userProfile.name;
+      document.getElementById('col-supervisor-total').innerText = userProfile.supervisor || 'Alex';
 
       const completedJobs = jobs.filter(j => j.status === 'completed');
       if (completedJobs.length === 0) {
@@ -1004,9 +1068,9 @@
         const workerBonusRate = 0.10;
 
         const compBonus = Math.round(amount * (compRate + sourceRate + subSourceRate));
-        const frankRateBonus = Math.round(amount * (salesRate + leadRate));
-        const frankWorkBonus = Math.round(amount * workerBonusRate);
-        const frankTotal = frankRateBonus + frankWorkBonus;
+        const salesRateBonus = Math.round(amount * (salesRate + leadRate));
+        const workerBonus = Math.round(amount * workerBonusRate);
+        const userTotal = salesRateBonus + workerBonus;
         const alexTotal = Math.round(amount * supervisorRate);
 
         tbody.innerHTML += `
@@ -1016,9 +1080,9 @@
             <td class="p-3 text-right font-black text-slate-900">${amount.toLocaleString()}</td>
             <td class="p-3 text-center font-bold text-cyan-700">${j.category} 類</td>
             <td class="p-3 text-right text-slate-500">${compBonus.toLocaleString()}</td>
-            <td class="p-3 text-right text-slate-500">${frankRateBonus.toLocaleString()}</td>
-            <td class="p-3 text-right text-emerald-600 font-bold">${frankWorkBonus.toLocaleString()}</td>
-            <td class="p-3 text-right font-black text-cyan-900 text-sm">${frankTotal.toLocaleString()}</td>
+            <td class="p-3 text-right text-slate-500">${salesRateBonus.toLocaleString()}</td>
+            <td class="p-3 text-right text-emerald-600 font-bold">${workerBonus.toLocaleString()}</td>
+            <td class="p-3 text-right font-black text-cyan-900 text-sm">${userTotal.toLocaleString()}</td>
             <td class="p-3 text-right font-black text-slate-800">${alexTotal.toLocaleString()}</td>
           </tr>
         `;
@@ -1026,48 +1090,87 @@
     }
 
     function copyProfitTableToClipboard() {
-      let tsv = "客戶單號\t客戶名稱\t施作日期\t類別\t消費金額\tFrank實領\tAlex實領\n";
+      let tsv = `訂單開頭代碼\t客戶單號\t施作日期\t客戶名稱\t消費金額\t業務員\t施作人員\t貼膜(A)/鍍膜(B)\t公司\t案件來源\t來源隸屬人員\t地區主管\t地區業務\t施做領班\t施做金額\t施做人員\t施做獎金\t公司/業務/領班合計%數\t公司/業務/領班合計%數之獎金\t總計\n`;
       const completedJobs = jobs.filter(j => j.status === 'completed');
       completedJobs.forEach(j => {
         const amt = calcTotal(j.items, j.addon, j.discount);
-        const d = j.workDate ? j.workDate.split('T')[0] : '';
         const isA = j.category === 'A';
-        const frank = Math.round(amt * (isA ? 0.30 : 0.35));
-        const alex = Math.round(amt * 0.05);
-        tsv += `${j.id}\t${j.client}\t${d}\t${j.category}\t${amt}\t${frank}\t${alex}\n`;
+        const d = j.workDate ? j.workDate.split('T')[0] : '';
+        const code = userProfile.code || 'AH';
+        tsv += `${code.charAt(0)}\t${j.id}\t${d}\t${j.client}\t${amt}\t\t\t${j.category}\t${isA?0.4:0.35}\t0.1\t0.05\t\t\t\t\t\t0\t${isA?0.55:0.5}\t${Math.round(amt*(isA?0.55:0.5))}\t${Math.round(amt*(isA?0.55:0.5))}\n`;
+        tsv += `\t\t\t\t\t${userProfile.name}\t${userProfile.name}\t\t\t\t\t\t${isA?0.15:0.2}\t0.05\t${amt}\t0.1\t${Math.round(amt*0.1)}\t${isA?0.2:0.25}\t${Math.round(amt*(isA?0.2:0.25))}\t${Math.round(amt*(isA?0.2:0.25))+Math.round(amt*0.1)}\n`;
+        tsv += `\t\t\t\t\t${userProfile.supervisor || 'Alex'}\t\t\t\t\t\t0.05\t\t\t\t\t0\t0.05\t${Math.round(amt*0.05)}\t${Math.round(amt*0.05)}\n`;
       });
       navigator.clipboard.writeText(tsv).then(() => {
-        alert("已成功複製分潤摘要！可直接貼上 Excel。");
+        alert(`已成功複製【${userProfile.name} (${userProfile.code})】的分潤標準 3 列格式！直接在 Excel 貼上即可。`);
       });
     }
 
     function exportProfitCSV() {
-      let csv = "\uFEFF單號,客戶,施作日期,類別,消費金額\n";
+      let csv = `\uFEFF訂單代碼,客戶單號,施作日期,客戶名稱,消費金額,業務員,類別,總計\n`;
       const completedJobs = jobs.filter(j => j.status === 'completed');
       completedJobs.forEach(j => {
         const amt = calcTotal(j.items, j.addon, j.discount);
         const d = j.workDate ? j.workDate.split('T')[0] : '';
-        csv += `${j.id},${j.client},${d},${j.category},${amt}\n`;
+        csv += `${userProfile.code},${j.id},${d},${j.client},${amt},${userProfile.name},${j.category},${amt}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `家事鍍分潤表_${new Date().toISOString().slice(0,7)}.csv`;
+      link.download = `家事鍍分潤表_${userProfile.code}_${new Date().toISOString().slice(0,7)}.csv`;
       link.click();
+    }
+
+    function openProfileModal() {
+      document.getElementById('prof-name').value = userProfile.name;
+      document.getElementById('prof-code').value = userProfile.code || 'AH';
+      document.getElementById('prof-phone').value = userProfile.phone || '';
+      document.getElementById('prof-supervisor').value = userProfile.supervisor || 'Alex';
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    function saveProfile() {
+      const name = document.getElementById('prof-name').value.trim() || '業務員';
+      let code = document.getElementById('prof-code').value.trim().toUpperCase() || 'AH';
+      const phone = document.getElementById('prof-phone').value.trim();
+      const supervisor = document.getElementById('prof-supervisor').value.trim() || 'Alex';
+
+      userProfile = { name, code, phone, supervisor };
+      localStorage.setItem('jiashidu_user_profile', JSON.stringify(userProfile));
+      
+      closeProfileModal();
+      applyUserProfileUI();
+      alert(`✅ 業務專屬設定儲存成功！\n業務姓名：${name}\n專屬單號代碼：${code}\n範例單號：${generateOrderIdByDate(new Date().toISOString())}`);
+    }
+
+    function applyUserProfileUI() {
+      const code = userProfile.code || 'AH';
+      document.getElementById('nav-user-name').innerText = `${userProfile.name} (${code})`;
+      document.getElementById('badge-calendar-file').innerText = getIcsFileName();
+      document.getElementById('btn-ics-label').innerText = `更新 ${getIcsFileName()}`;
+      document.getElementById('label-prefix-display').innerText = code;
+      document.getElementById('q-prefix-badge').innerText = `業務代碼: ${code}`;
+
+      const wUrl = getWebcalUrl();
+      const descEl = document.getElementById('webcal-desc-text');
+      if (descEl) {
+        descEl.innerHTML = `【${userProfile.name} (${code}) 專屬】：<span class="font-mono text-white underline">${wUrl}</span><br>複製此網址貼入 TimeTree，即可達成個人獨立同步！`;
+      }
+
+      const mDate = document.getElementById('q-measure-date').value || new Date().toISOString().slice(0, 16);
+      document.getElementById('q-id').value = generateOrderIdByDate(mDate);
+      renderProfitTable();
     }
 
     window.onload = function() {
       const nowStr = new Date().toISOString().slice(0, 16);
       document.getElementById('q-measure-date').value = nowStr;
-      document.getElementById('q-id').value = generateOrderIdByDate(nowStr);
       
-      // 更新 Webcal 提示文字
-      const wUrl = getWebcalUrl();
-      const descEl = document.getElementById('webcal-desc-text');
-      if (descEl) {
-        descEl.innerHTML = `訂閱來源：<span class="font-mono text-white underline">${wUrl}</span><br>複製此網址貼入 TimeTree，即可達成 24 小時遠端靜默同步！`;
-      }
-
+      applyUserProfileUI();
       renderJobList();
       addQuoteItemRow();
     };
