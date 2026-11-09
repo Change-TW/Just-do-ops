@@ -17,8 +17,6 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
       <div class="flex items-center space-x-2.5">
-        <!-- 頂部 Logo (載入官方圖檔，若無則顯示高解析版面) -->
-        <img src="logo.png" onerror="this.onerror=null; this.src='https://change-tw.github.io/cat-gaze/logo.png';" class="h-9 w-auto object-contain hidden" id="top-logo-img" />
         <div class="flex items-center">
           <img src="logo.png" class="h-8 sm:h-9 w-auto object-contain" alt="家事鍍 Just Do" onerror="this.style.display='none'; document.getElementById('header-fallback-logo').classList.remove('hidden');" />
           <div id="header-fallback-logo" class="hidden flex items-center space-x-1">
@@ -26,7 +24,7 @@
             <span class="bg-cyan-600 text-white font-black text-base px-2 py-0.5 rounded">家事鍍</span>
           </div>
         </div>
-        <span class="text-xs font-bold text-slate-500 hidden md:inline border-l border-slate-200 pl-2.5">現場丈量 ‧ 報價生成 ‧ TimeTree訂閱 ‧ 分潤中心</span>
+        <span class="text-xs font-bold text-slate-500 hidden md:inline border-l border-slate-200 pl-2.5">現場丈量 ‧ 報價生成 ‧ TimeTree手機訂閱 ‧ 分潤中心</span>
       </div>
       <div class="flex items-center space-x-1 sm:space-x-2">
         <button onclick="switchTab('dashboard')" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition bg-cyan-50 text-cyan-700" data-tab="dashboard">
@@ -44,26 +42,26 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8">
     
-    <!-- 分頁 1: 案場總覽與預約排程 -->
+    <!-- 分頁 1: 案場總覽與預約排程 (手機原生行事曆與 TimeTree 完全相容版) -->
     <section id="tab-dashboard" class="space-y-4 sm:space-y-6">
       
-      <!-- TimeTree 訂閱通知橫幅 -->
+      <!-- 手機專用日曆連動橫幅 -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
-            <i class="fa-solid fa-rss text-lg"></i>
+            <i class="fa-solid fa-mobile-screen-button text-lg"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm sm:text-base">TimeTree 自動載入與日曆訂閱</h3>
-            <p class="text-xs text-emerald-100 mt-0.5">點擊複製訂閱連結加入 TimeTree 外部日曆，排程自動連動更新，不需手動匯入。</p>
+            <h3 class="font-bold text-sm sm:text-base">手機行事曆 ＆ TimeTree 同步中心</h3>
+            <p class="text-xs text-emerald-100 mt-0.5">手機點擊下方「一鍵同步手機日曆」，系統將全量行程直接注入手機，TimeTree 即可直接同步顯示！</p>
           </div>
         </div>
-        <div class="flex items-center space-x-2 w-full md:w-auto">
-          <button onclick="copySubscriptionFeed()" class="flex-1 md:flex-none bg-white text-emerald-800 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs font-black shadow-sm transition flex items-center justify-center space-x-1">
-            <i class="fa-solid fa-link"></i>
-            <span>複製 TimeTree 訂閱網址</span>
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <button onclick="syncToMobileCalendar()" class="flex-1 sm:flex-none bg-white text-emerald-800 hover:bg-emerald-50 px-3.5 py-2.5 rounded-xl text-xs font-black shadow-sm transition flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-calendar-plus text-emerald-600"></i>
+            <span>📱 一鍵同步手機日曆</span>
           </button>
-          <button onclick="openNewJobModal()" class="flex-1 md:flex-none bg-emerald-950/40 hover:bg-emerald-950/60 border border-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1">
+          <button onclick="openNewJobModal()" class="flex-1 sm:flex-none bg-emerald-950/40 hover:bg-emerald-950/60 border border-white/20 text-white px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1">
             <i class="fa-solid fa-plus"></i>
             <span>新增案場</span>
           </button>
@@ -272,11 +270,10 @@
       </div>
       
       <div class="p-3 sm:p-6 overflow-y-auto space-y-4">
-        <!-- PAGE 1: 報價主表 (含官方指定 Logo) -->
+        <!-- PAGE 1: 報價主表 -->
         <div class="bg-white text-black p-4 sm:p-8 rounded-xl shadow border border-slate-300 text-xs leading-tight">
           <div class="flex justify-between items-center border-b-2 border-black pb-2.5">
             <div class="flex items-center space-x-3">
-              <!-- 官方家事鍍 Logo -->
               <div class="w-32 sm:w-36 flex items-center justify-center">
                 <img src="logo.png" alt="家事鍍 Just Do" class="max-h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('modal-fallback-logo').classList.remove('hidden');" />
                 <div id="modal-fallback-logo" class="hidden flex flex-col">
@@ -559,8 +556,8 @@
             <button onclick="markJobStatus(${idx})" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg text-center">
               切換狀態
             </button>
-            <button onclick="quickGoogleCalendar('${j.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold py-2 rounded-lg text-center border border-emerald-200">
-              <i class="fa-brands fa-google mr-1"></i>加日曆
+            <button onclick="quickSingleEventToCalendar('${j.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold py-2 rounded-lg text-center border border-emerald-200">
+              <i class="fa-regular fa-calendar-check mr-1"></i>加日曆
             </button>
           </div>
         `;
@@ -584,8 +581,8 @@
           </td>
           <td class="p-4">${statusBadge}</td>
           <td class="p-4 text-right space-x-1.5">
-            <button onclick="quickGoogleCalendar('${j.id}')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-bold border border-emerald-200">
-              Google
+            <button onclick="quickSingleEventToCalendar('${j.id}')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg font-bold border border-emerald-200">
+              加日曆
             </button>
             <button onclick="loadJobToQuote(${idx})" class="text-xs bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg font-bold">
               報價
@@ -863,12 +860,13 @@
       document.getElementById('quote-modal').classList.add('hidden');
     }
 
-    function copySubscriptionFeed() {
-      let icsContent = [
+    // 核心技術修復：手機原生相容的行事曆注入引擎
+    function buildFullICS() {
+      let ics = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
         'PRODID:-//Jiashidu//OpsSuite//TW',
-        'X-WR-CALNAME:家事鍍施工與丈量行程',
+        'X-WR-CALNAME:家事鍍排程',
         'CALSCALE:GREGORIAN'
       ];
 
@@ -880,40 +878,57 @@
         const end = new Date(d.getTime() + 3*60*60*1000).toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
         const isWork = !!j.workDate;
 
-        icsContent.push('BEGIN:VEVENT');
-        icsContent.push(`SUMMARY:【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${j.items[0]?.name || '案場'}`);
-        icsContent.push(`DTSTART:${start}`);
-        icsContent.push(`DTEND:${end}`);
-        icsContent.push(`LOCATION:${j.address || ''}`);
-        icsContent.push(`DESCRIPTION:單號：${j.id}\\n客戶：${j.client}\\n電話：${j.phone}\\n狀態：${j.status}`);
-        icsContent.push('END:VEVENT');
+        ics.push('BEGIN:VEVENT');
+        ics.push(`UID:${j.id}@jiashidu.tw`);
+        ics.push(`DTSTAMP:${start}`);
+        ics.push(`SUMMARY:【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${j.items[0]?.name || '案場'}`);
+        ics.push(`DTSTART:${start}`);
+        ics.push(`DTEND:${end}`);
+        ics.push(`LOCATION:${j.address || '施工地址'}`);
+        ics.push(`DESCRIPTION:單號：${j.id}\\n客戶：${j.client}\\n電話：${j.phone}\\n狀態：${j.status}`);
+        ics.push('STATUS:CONFIRMED');
+        ics.push('END:VEVENT');
       });
-      icsContent.push('END:VCALENDAR');
+      ics.push('END:VCALENDAR');
+      return ics.join('\r\n');
+    }
 
-      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
+    // 手機一鍵同步手機日曆（iOS / Android 原生支援）
+    function syncToMobileCalendar() {
+      const icsString = buildFullICS();
+      
+      // 透過 data URI 直接喚醒手機系統日曆（iOS / Safari / Chrome 原生支援）
+      const base64Data = btoa(unescape(encodeURIComponent(icsString)));
+      const dataUri = `data:text/calendar;charset=utf-8;base64,${base64Data}`;
 
       const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `家事鍍全員排程_TimeTree載入.ics`);
+      link.href = dataUri;
+      link.setAttribute('download', '家事鍍排程.ics');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      alert("已為您下載最新【家事鍍全員排程.ics】！\n\n【TimeTree 一次載入方式】：\n打開手機 TimeTree 點選「設定」→「外部日曆」→ 選擇此日曆匯入，之後即可與團隊成員同步查看。");
+      // 手機操作引導提示
+      setTimeout(() => {
+        alert("📲 【手機同步完成指引】：\n1. 手機若彈出「加入日曆」，請點選「全部加入」即刻存入手機日曆。\n2. 打開 TimeTree App → 點選左上選單「設定」→「外部日曆」→ 確認勾選「手機本機日曆」，所有案場就會完整出現在 TimeTree 團隊行事曆中！");
+      }, 500);
     }
 
-    function quickGoogleCalendar(jobId) {
+    // 單一案場快速加入日曆（手機相容）
+    function quickSingleEventToCalendar(jobId) {
       const j = jobs.find(x => x.id === jobId);
       if (!j) return;
       const dStr = j.workDate || j.measureDate || new Date().toISOString();
       const d = new Date(dStr);
       const start = d.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
       const end = new Date(d.getTime() + 3*60*60*1000).toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
-      const title = encodeURIComponent(`【家事鍍】${j.client} - ${j.items[0]?.name || '施工'}`);
+
+      const isWork = !!j.workDate;
+      const title = encodeURIComponent(`【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${j.items[0]?.name || '現場'}`);
       const loc = encodeURIComponent(j.address || '');
-      const details = encodeURIComponent(`單號：${j.id}\n電話：${j.phone}\n金額：${calcTotal(j.items, j.addon, j.discount)}\n備註：${j.notes}`);
-      
+      const details = encodeURIComponent(`單號：${j.id}\n客戶：${j.client}\n電話：${j.phone}\n金額：${calcTotal(j.items, j.addon, j.discount)}\n備註：${j.notes || '無'}`);
+
+      // 手機點擊跳轉 Google 日曆
       const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${loc}`;
       window.open(gUrl, '_blank');
     }
