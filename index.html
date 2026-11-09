@@ -731,4 +731,221 @@
       document.getElementById('modal-sum-addon').innerText = totals.addon.toLocaleString();
       document.getElementById('modal-sum-discount').innerText = totals.discount.toLocaleString();
       document.getElementById('modal-sum-final').innerText = `NT$ ${totals.total.toLocaleString()}`;
-      document.getElementById('
+      document.getElementById('modal-other-notes').innerText = document.getElementById('q-notes').value || '無';
+
+      const modalItemsBody = document.getElementById('modal-items-body');
+      modalItemsBody.innerHTML = '';
+      
+      document.querySelectorAll('.item-row').forEach(row => {
+        const name = row.querySelector('.item-name').value;
+        const w = row.querySelector('.item-w').value;
+        const h = row.querySelector('.item-h').value;
+        const cai = calcCai(w, h);
+        const qty = row.querySelector('.item-qty').value;
+        const subtotal = row.querySelector('.item-subtotal').value;
+        const note = row.querySelector('.item-note').value;
+
+        // 詳細資料自動化規格字串
+        const detailStr = (w && h) ? `${w} × ${h} cm (約 ${cai} 才)` : '現場依實測施作';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border-r border-black p-1 text-center font-medium">${name}</td>
+          <td class="border-r border-black p-1 font-mono">${detailStr}</td>
+          <td class="border-r border-black p-1 text-center font-mono">${qty}</td>
+          <td class="border-r border-black p-1 text-right font-mono font-bold">${Number(subtotal).toLocaleString()}</td>
+          <td class="p-1">${note}</td>
+        `;
+        modalItemsBody.appendChild(tr);
+      });
+
+      document.getElementById('quote-modal').classList.remove('hidden');
+    }
+
+    function closeQuoteModal() {
+      document.getElementById('quote-modal').classList.add('hidden');
+    }
+
+    // TimeTree 訂閱來源 (產生標準 webcal / 訂閱連結)
+    function copySubscriptionFeed() {
+      // 產生含有當前所有案場之 ICS 動態 Blob 網址，或引導使用者訂閱
+      let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Jiashidu//OpsSuite//TW',
+        'X-WR-CALNAME:家事鍍施工與丈量行程',
+        'CALSCALE:GREGORIAN'
+      ];
+
+      jobs.forEach(j => {
+        const dStr = j.workDate || j.measureDate;
+        if (!dStr) return;
+        const d = new Date(dStr);
+        const start = d.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
+        const end = new Date(d.getTime() + 3*60*60*1000).toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
+        const isWork = !!j.workDate;
+
+        icsContent.push('BEGIN:VEVENT');
+        icsContent.push(`SUMMARY:【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${j.items[0]?.name || '案場'}`);
+        icsContent.push(`DTSTART:${start}`);
+        icsContent.push(`DTEND:${end}`);
+        icsContent.push(`LOCATION:${j.address || ''}`);
+        icsContent.push(`DESCRIPTION:單號：${j.id}\\n客戶：${j.client}\\n電話：${j.phone}\\n狀態：${j.status}`);
+        icsContent.push('END:VEVENT');
+      });
+      icsContent.push('END:VCALENDAR');
+
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      // 下載一次性全量檔，並複製操作說明
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `家事鍍全員排程_TimeTree載入.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert("已為您下載最新【家事鍍全員排程.ics】！\n\n【TimeTree 一次載入方式】：\n打開手機 TimeTree 點選「設定」→「外部日曆」→ 選擇此日曆匯入，之後即可與團隊成員同步查看，不用每次單筆手動下載。");
+    }
+
+    // Google 日曆快速跳轉新增
+    function quickGoogleCalendar(jobId) {
+      const j = jobs.find(x => x.id === jobId);
+      if (!j) return;
+      const dStr = j.workDate || j.measureDate || new Date().toISOString();
+      const d = new Date(dStr);
+      const start = d.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
+      const end = new Date(d.getTime() + 3*60*60*1000).toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
+      const title = encodeURIComponent(`【家事鍍】${j.client} - ${j.items[0]?.name || '施工'}`);
+      const loc = encodeURIComponent(j.address || '');
+      const details = encodeURIComponent(`單號：${j.id}\n電話：${j.phone}\n金額：${calcTotal(j.items, j.addon, j.discount)}\n備註：${j.notes}`);
+      
+      const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${loc}`;
+      window.open(gUrl, '_blank');
+    }
+
+    function openNewJobModal() {
+      const name = prompt("請輸入客戶姓名：");
+      if (!name) return;
+      const phone = prompt("請輸入聯絡電話：", "09");
+      const addr = prompt("請輸入施工地址：");
+      const mDate = prompt("預約丈量時間 (格式: 2026-11-10T10:00)：", new Date().toISOString().slice(0, 16));
+
+      jobs.unshift({
+        id: generateOrderId(),
+        client: name,
+        phone: phone || '',
+        address: addr || '',
+        email: '',
+        taxid: '',
+        category: 'A',
+        measureDate: mDate,
+        workDate: '',
+        status: 'pending_measure',
+        items: [{ name: '衛浴隔間玻璃', width: 90, height: 190, qty: 1, subtotal: 0, note: '' }],
+        addon: 0,
+        discount: 0,
+        notes: ''
+      });
+      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+      renderJobList();
+    }
+
+    function markJobStatus(idx) {
+      const current = jobs[idx].status;
+      const nextMap = {
+        'pending_measure': 'quoted',
+        'quoted': 'scheduled',
+        'scheduled': 'completed',
+        'completed': 'pending_measure'
+      };
+      jobs[idx].status = nextMap[current] || 'pending_measure';
+      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+      renderJobList();
+    }
+
+    function renderProfitTable() {
+      const tbody = document.getElementById('profit-table-body');
+      tbody.innerHTML = '';
+
+      const completedJobs = jobs.filter(j => j.status === 'completed');
+      if (completedJobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">尚無已完工案件。請在案場列表將狀態切換為「完工驗收」。</td></tr>`;
+        return;
+      }
+
+      completedJobs.forEach(j => {
+        const amount = calcTotal(j.items, j.addon, j.discount);
+        const isA = j.category === 'A';
+        const dateStr = j.workDate ? j.workDate.split('T')[0] : '2026-09-05';
+
+        const compRate = isA ? 0.40 : 0.35;
+        const sourceRate = 0.10;
+        const subSourceRate = 0.05;
+        const supervisorRate = 0.05;
+        const salesRate = isA ? 0.15 : 0.20;
+        const leadRate = 0.05;
+        const workerBonusRate = 0.10;
+
+        const compBonus = Math.round(amount * (compRate + sourceRate + subSourceRate));
+        const frankRateBonus = Math.round(amount * (salesRate + leadRate));
+        const frankWorkBonus = Math.round(amount * workerBonusRate);
+        const frankTotal = frankRateBonus + frankWorkBonus;
+        const alexTotal = Math.round(amount * supervisorRate);
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-200">
+            <td class="p-3 font-bold text-slate-900">${j.client} <span class="text-[11px] block text-slate-400 font-mono">${j.id}</span></td>
+            <td class="p-3">${dateStr}</td>
+            <td class="p-3 text-right font-black text-slate-900">${amount.toLocaleString()}</td>
+            <td class="p-3 text-center font-bold text-cyan-700">${j.category} 類</td>
+            <td class="p-3 text-right text-slate-500">${compBonus.toLocaleString()}</td>
+            <td class="p-3 text-right text-slate-500">${frankRateBonus.toLocaleString()}</td>
+            <td class="p-3 text-right text-emerald-600 font-bold">${frankWorkBonus.toLocaleString()}</td>
+            <td class="p-3 text-right font-black text-cyan-900 text-sm">${frankTotal.toLocaleString()}</td>
+            <td class="p-3 text-right font-black text-slate-800">${alexTotal.toLocaleString()}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function copyProfitTableToClipboard() {
+      let tsv = "客戶單號\t客戶名稱\t施作日期\t類別\t消費金額\tFrank實領\tAlex實領\n";
+      const completedJobs = jobs.filter(j => j.status === 'completed');
+      completedJobs.forEach(j => {
+        const amt = calcTotal(j.items, j.addon, j.discount);
+        const d = j.workDate ? j.workDate.split('T')[0] : '';
+        const isA = j.category === 'A';
+        const frank = Math.round(amt * (isA ? 0.30 : 0.35));
+        const alex = Math.round(amt * 0.05);
+        tsv += `${j.id}\t${j.client}\t${d}\t${j.category}\t${amt}\t${frank}\t${alex}\n`;
+      });
+      navigator.clipboard.writeText(tsv).then(() => {
+        alert("已成功複製分潤摘要！可直接貼上 Excel。");
+      });
+    }
+
+    function exportProfitCSV() {
+      let csv = "\uFEFF單號,客戶,施作日期,類別,消費金額\n";
+      const completedJobs = jobs.filter(j => j.status === 'completed');
+      completedJobs.forEach(j => {
+        const amt = calcTotal(j.items, j.addon, j.discount);
+        const d = j.workDate ? j.workDate.split('T')[0] : '';
+        csv += `${j.id},${j.client},${d},${j.category},${amt}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `家事鍍分潤表_${new Date().toISOString().slice(0,7)}.csv`;
+      link.click();
+    }
+
+    window.onload = function() {
+      document.getElementById('q-id').value = generateOrderId();
+      renderJobList();
+      addQuoteItemRow();
+    };
+  </script>
+</body>
+</html>
