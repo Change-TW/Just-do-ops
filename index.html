@@ -64,7 +64,6 @@
     <!-- 分頁 1: 案場總覽與預約排程 -->
     <section id="tab-dashboard" class="space-y-4 sm:space-y-6">
       
-      <!-- 原生自動化同步橫幅 -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
@@ -128,12 +127,12 @@
       </div>
     </section>
 
-    <!-- 分頁 2: 現場丈量與即時報價 (無預設數值 + 施工細項表格) -->
+    <!-- 分頁 2: 現場丈量與即時報價 (結構完全獨立版) -->
     <section id="tab-quote-builder" class="space-y-4 sm:space-y-6 hidden">
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">現場丈量與報價單生成</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">現場空白填寫 ｜ 支援雙組尺寸才數試算 ＆ 施工細項金額明細表</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數試算與獨立施工項目金額表格分離填寫，自動彙總總價</p>
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
@@ -149,6 +148,7 @@
 
       <!-- 表單本體 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- 客戶資訊 -->
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3.5">
           <h3 class="font-bold text-slate-800 border-b pb-2 text-sm flex items-center justify-between">
             <span>客戶與單號資訊</span>
@@ -193,44 +193,86 @@
           </div>
         </div>
 
-        <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-          <div class="flex items-center justify-between border-b pb-2">
-            <div class="flex items-center space-x-2">
-              <h3 class="font-bold text-slate-800 text-sm">施作項目與尺寸才數試算</h3>
-              <span class="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded font-bold border border-cyan-200">單價 NT$ 350 / 才（才數四捨五入）</span>
-            </div>
-            <button onclick="addQuoteItemRow()" class="text-xs bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold px-3 py-1.5 rounded-lg transition">
-              <i class="fa-solid fa-plus mr-1"></i>加一項
-            </button>
-          </div>
-
-          <div class="space-y-4" id="quote-items-container"></div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">加購金額 (NT$)</label>
-              <input type="number" id="q-addon" value="" placeholder="0" oninput="calcQuoteTotals()" class="w-full border border-slate-200 rounded-lg p-2 text-xs text-right font-mono" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">優惠折扣 (折讓填負值)</label>
-              <input type="number" id="q-discount" value="" placeholder="0" oninput="calcQuoteTotals()" class="w-full border border-slate-200 rounded-lg p-2 text-xs text-right font-mono text-rose-600" />
-            </div>
-            <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-100 flex flex-col justify-center">
-              <div class="flex justify-between items-baseline">
-                <span class="text-xs text-cyan-800 font-bold">總金額</span>
-                <span class="text-base font-black text-cyan-950 font-mono" id="q-final-total">NT$ 0</span>
-              </div>
-              <div class="flex justify-between text-[11px] text-cyan-700 font-mono mt-1 pt-1 border-t border-cyan-200/60">
-                <span>定金 30%: <b id="q-deposit-calc">0</b></span>
-                <span>尾款 70%: <b id="q-balance-calc">0</b></span>
-              </div>
-            </div>
-          </div>
+        <!-- 施工項目明細（區塊一：尺寸才數 ＋ 區塊二：獨立施工項目表格） -->
+        <div class="lg:col-span-2 space-y-4">
           
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">其他備註</label>
-            <textarea id="q-notes" rows="2" class="w-full border border-slate-200 rounded-lg p-2 text-xs" placeholder="現場特殊狀況、施工環境限制說明..."></textarea>
+          <!-- 區塊一：玻璃尺寸與才數試算 -->
+          <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between border-b pb-2">
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                  <i class="fa-solid fa-ruler-combined text-cyan-600 mr-1.5"></i>玻璃尺寸與才數試算
+                </h3>
+                <span class="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded font-bold border border-cyan-200">NT$ 350 / 才（四捨五入）</span>
+              </div>
+              <button onclick="addQuoteItemRow()" type="button" class="text-xs bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold px-3 py-1.5 rounded-lg transition">
+                <i class="fa-solid fa-plus mr-1"></i>加一處尺寸
+              </button>
+            </div>
+            <!-- 尺寸卡片容器 -->
+            <div class="space-y-3" id="quote-items-container"></div>
           </div>
+
+          <!-- 區塊二：獨立施工項目與金額表格 (不掛在寬高內) -->
+          <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between border-b pb-2">
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                  <i class="fa-solid fa-list-check text-cyan-600 mr-1.5"></i>獨立施工項目與金額明細
+                </h3>
+                <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">其他施作、加購或清潔</span>
+              </div>
+              <button onclick="addStandaloneWorkItem()" type="button" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg transition">
+                <i class="fa-solid fa-plus mr-1"></i>新增施工項目
+              </button>
+            </div>
+            <!-- 獨立表格 -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-[11px] text-slate-500 font-bold border-b">
+                  <tr>
+                    <th class="p-2">施工項目名稱</th>
+                    <th class="p-2 w-1/3">工區 / 備註</th>
+                    <th class="p-2 w-32 text-right">金額 (NT$)</th>
+                    <th class="p-2 w-10 text-center">刪除</th>
+                  </tr>
+                </thead>
+                <tbody id="standalone-work-items-body" class="divide-y divide-slate-100">
+                  <!-- 動態項目 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 金額加總彙整 -->
+          <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">加購金額 (NT$)</label>
+                <input type="number" id="q-addon" value="" placeholder="0" oninput="calcQuoteTotals()" class="w-full border border-slate-200 rounded-lg p-2 text-xs text-right font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">優惠折扣 (折讓填負值)</label>
+                <input type="number" id="q-discount" value="" placeholder="0" oninput="calcQuoteTotals()" class="w-full border border-slate-200 rounded-lg p-2 text-xs text-right font-mono text-rose-600" />
+              </div>
+              <div class="bg-cyan-50 p-3 rounded-xl border border-cyan-100 flex flex-col justify-center">
+                <div class="flex justify-between items-baseline">
+                  <span class="text-xs text-cyan-800 font-bold">總金額</span>
+                  <span class="text-base font-black text-cyan-950 font-mono" id="q-final-total">NT$ 0</span>
+                </div>
+                <div class="flex justify-between text-[11px] text-cyan-700 font-mono mt-1 pt-1 border-t border-cyan-200/60">
+                  <span>定金 30%: <b id="q-deposit-calc">0</b></span>
+                  <span>尾款 70%: <b id="q-balance-calc">0</b></span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">其他備註</label>
+              <textarea id="q-notes" rows="2" class="w-full border border-slate-200 rounded-lg p-2 text-xs" placeholder="現場特殊狀況、施工環境限制說明..."></textarea>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -308,7 +350,6 @@
           <label class="block font-bold text-slate-700 mb-1">直屬地區主管</label>
           <input type="text" id="prof-supervisor" value="Alex" class="w-full border rounded-lg p-2 font-bold" />
         </div>
-        <!-- GAS Webhook URL 輸入框 -->
         <div class="pt-2 border-t border-slate-100">
           <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
             <span>Google Apps Script (GAS) Webhook 網址</span>
@@ -493,7 +534,6 @@
   </div>
 
   <script>
-    // Firebase 配置
     const firebaseConfig = {
       apiKey: "AIzaSyBSJP9hWeJmUHicbis-O2mbbeH80xkzoWE",
       authDomain: "just-do-ops.firebaseapp.com",
@@ -523,20 +563,19 @@
       code: 'AH',
       phone: '0912345678',
       supervisor: 'Alex',
-      gasWebhookUrl: '' // Google Apps Script 部署 URL
+      gasWebhookUrl: ''
     };
 
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [];
 
-    // 自動發送至 Google 日曆 (GAS Webhook 原生整合)
+    // 自動發送至 Google 日曆 (GAS Webhook)
     function autoSyncToGoogleCalendar(jobData) {
       const url = userProfile.gasWebhookUrl;
       if (!url || !url.startsWith("https://script.google.com")) {
-        console.log("未設定 GAS Webhook URL，略過自動日曆同步");
         return;
       }
 
-      const total = calcTotal(jobData.items, jobData.addon, jobData.discount);
+      const total = calcTotal(jobData.items, jobData.standaloneItems, jobData.addon, jobData.discount);
       const payload = {
         type: jobData.workDate ? '施工' : '丈量',
         id: jobData.id,
@@ -546,18 +585,15 @@
         startTime: jobData.workDate || jobData.measureDate || new Date().toISOString(),
         total: total,
         sales: `${userProfile.name} (${userProfile.code})`,
-        itemName: jobData.items?.[0]?.name || '施作項目',
+        itemName: jobData.items?.[0]?.name || jobData.standaloneItems?.[0]?.name || '施作項目',
         notes: jobData.notes || ''
       };
 
-      // 呼叫 GAS (使用 no-cors 避免跨網域阻擋，背景靜默送出)
       fetch(url, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      }).then(() => {
-        console.log("✅ 已成功自動拋送至 Google 日曆 Webhook");
       }).catch(err => {
         console.warn("GAS 自動拋送失敗：", err);
       });
@@ -662,7 +698,7 @@
       document.getElementById('job-count-badge').innerText = `${jobs.length} 件`;
 
       jobs.forEach((j, idx) => {
-        const total = calcTotal(j.items, j.addon, j.discount);
+        const total = calcTotal(j.items, j.standaloneItems, j.addon, j.discount);
         
         let statusBadge = '<span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800 font-bold">待丈量</span>';
         if (j.status === 'quoted') statusBadge = '<span class="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-bold">已報價</span>';
@@ -720,7 +756,7 @@
             <div class="text-xs text-slate-400 font-mono">${j.phone}</div>
           </td>
           <td class="p-4">
-            <div class="text-xs font-medium text-slate-700">${j.items[0]?.name || '現場丈量'}</div>
+            <div class="text-xs font-medium text-slate-700">${j.items?.[0]?.name || j.standaloneItems?.[0]?.name || '現場丈量'}</div>
             <div class="text-xs text-cyan-700 font-mono font-bold">NT$ ${total.toLocaleString()}</div>
           </td>
           <td class="p-4 text-xs">
@@ -744,16 +780,19 @@
       });
     }
 
-    function calcTotal(items, addon = 0, discount = 0) {
-      const sum = (items || []).reduce((acc, cur) => acc + (Number(cur.subtotal) || 0), 0);
-      return sum + Number(addon || 0) + Number(discount || 0);
+    // 計算總額：玻璃項目小計 + 獨立施工項目金額 + 加購 + 折扣
+    function calcTotal(items = [], standaloneItems = [], addon = 0, discount = 0) {
+      const sum1 = (items || []).reduce((acc, cur) => acc + (Number(cur.subtotal) || 0), 0);
+      const sum2 = (standaloneItems || []).reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
+      return sum1 + sum2 + Number(addon || 0) + Number(discount || 0);
     }
 
+    // 區塊一：玻璃尺寸卡片
     function addQuoteItemRow(data = {}) {
       const container = document.getElementById('quote-items-container');
       const rowId = 'item-' + Date.now() + Math.random().toString(36).substr(2, 4);
       const row = document.createElement('div');
-      row.className = 'bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 space-y-3 item-row';
+      row.className = 'bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-3.5 space-y-2.5 item-row';
       row.id = rowId;
 
       const name = data.name || '';
@@ -773,11 +812,11 @@
 
       row.innerHTML = `
         <div class="flex items-center justify-between gap-2">
-          <input type="text" value="${name}" placeholder="請輸入主施工項目 (例如: 衛浴隔間玻璃、玄關玻璃)" class="w-1/2 border border-slate-200 rounded-lg p-1.5 text-xs font-bold bg-white item-name" />
+          <input type="text" value="${name}" placeholder="玻璃施作項目 (例如: 衛浴隔間玻璃)" class="w-1/2 border border-slate-200 rounded-lg p-1.5 text-xs font-bold bg-white item-name" />
           <div class="flex items-center space-x-1.5 w-1/2 justify-end">
             <span class="text-[11px] text-slate-500 font-bold shrink-0">工區:</span>
             <input type="text" value="${note}" placeholder="例如: 主衛浴乾濕分離" class="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-white item-note" />
-            <button onclick="document.getElementById('${rowId}').remove(); calcQuoteTotals();" class="text-rose-500 hover:text-rose-700 p-1 shrink-0" title="刪除此項目">
+            <button onclick="document.getElementById('${rowId}').remove(); calcQuoteTotals();" class="text-rose-500 hover:text-rose-700 p-1 shrink-0" title="刪除此尺寸卡片">
               <i class="fa-solid fa-trash-can text-sm"></i>
             </button>
           </div>
@@ -819,29 +858,6 @@
           </div>
         </div>
 
-        <div class="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-slate-700 flex items-center">
-              <i class="fa-solid fa-list-ul mr-1 text-cyan-600"></i>施工項目細項與加收/折讓明細表
-            </span>
-            <button onclick="addSubItem('${rowId}')" type="button" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold transition">
-              <i class="fa-solid fa-plus mr-0.5"></i>新增細項
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-50 text-[10px] text-slate-500 font-bold border-b">
-                <tr>
-                  <th class="p-1">細項施工名稱</th>
-                  <th class="p-1 w-28 text-right">金額 (NT$)</th>
-                  <th class="p-1 w-8 text-center">刪除</th>
-                </tr>
-              </thead>
-              <tbody class="sub-items-body divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
-        </div>
-
         <div class="flex items-center justify-between gap-2 pt-0.5">
           <div class="bg-cyan-100/80 px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
             <span class="text-[10px] text-cyan-800 font-bold">合計才數:</span>
@@ -850,38 +866,13 @@
           </div>
 
           <div class="flex items-center space-x-1.5">
-            <span class="text-xs text-slate-500 font-bold">小計 NT$</span>
-            <input type="number" value="${subtotal}" placeholder="0" oninput="calcQuoteTotals()" class="w-28 sm:w-32 border border-cyan-300 bg-white rounded-lg p-1.5 text-xs text-right font-mono font-black text-cyan-900 item-subtotal" title="可手動修改或自動試算: 才數(四捨五入) × 350 + 細項加總" />
+            <span class="text-xs text-slate-500 font-bold">玻璃小計 NT$</span>
+            <input type="number" value="${subtotal}" placeholder="0" oninput="calcQuoteTotals()" class="w-28 sm:w-32 border border-cyan-300 bg-white rounded-lg p-1.5 text-xs text-right font-mono font-black text-cyan-900 item-subtotal" title="才數(四捨五入) × 350" />
           </div>
         </div>
       `;
       container.appendChild(row);
-
-      if (data.subItems && data.subItems.length > 0) {
-        data.subItems.forEach(s => addSubItem(rowId, s.name, s.amount));
-      }
-
       calcQuoteTotals();
-    }
-
-    function addSubItem(rowId, name = '', amount = '') {
-      const row = document.getElementById(rowId);
-      const tbody = row.querySelector('.sub-items-body');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="p-1">
-          <input type="text" value="${name}" placeholder="例如: 特殊除垢、把手施工、贈品光觸媒" class="w-full border rounded p-1 text-xs sub-item-name" />
-        </td>
-        <td class="p-1 text-right">
-          <input type="number" value="${amount}" placeholder="0" oninput="updateRowCai('${rowId}')" class="w-full border rounded p-1 text-xs text-right font-mono font-bold sub-item-amount" />
-        </td>
-        <td class="p-1 text-center">
-          <button onclick="this.closest('tr').remove(); updateRowCai('${rowId}');" class="text-rose-500 hover:text-rose-700">
-            <i class="fa-solid fa-xmark text-xs"></i>
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
     }
 
     function updateRowCai(rowId) {
@@ -900,24 +891,54 @@
       row.querySelector('.row-cai2').innerText = `${cai2}才`;
       row.querySelector('.row-cai-total').innerText = `${roundedCai} 才`;
 
-      let subItemsTotal = 0;
-      row.querySelectorAll('.sub-item-amount').forEach(inp => {
-        subItemsTotal += Number(inp.value) || 0;
-      });
+      const autoSubtotal = roundedCai > 0 ? (roundedCai * 350) : '';
+      row.querySelector('.item-subtotal').value = autoSubtotal;
 
-      const caiBase = roundedCai > 0 ? (roundedCai * 350) : 0;
-      const totalAmount = caiBase + subItemsTotal;
-      row.querySelector('.item-subtotal').value = totalAmount > 0 ? totalAmount : '';
+      calcQuoteTotals();
+    }
 
+    // 區塊二：獨立施工項目與金額表格
+    function addStandaloneWorkItem(data = {}) {
+      const tbody = document.getElementById('standalone-work-items-body');
+      const tr = document.createElement('tr');
+      tr.className = 'standalone-row';
+      const name = data.name || '';
+      const note = data.note || '';
+      const amount = data.amount !== undefined && data.amount !== 0 ? data.amount : '';
+
+      tr.innerHTML = `
+        <td class="p-2">
+          <input type="text" value="${name}" placeholder="例如: 把手施工、特殊重垢除垢、全室光觸媒" class="w-full border rounded p-1.5 text-xs font-medium standalone-name" />
+        </td>
+        <td class="p-2">
+          <input type="text" value="${note}" placeholder="例如: 客衛把手、贈送項目" class="w-full border rounded p-1.5 text-xs standalone-note" />
+        </td>
+        <td class="p-2 text-right">
+          <input type="number" value="${amount}" placeholder="0" oninput="calcQuoteTotals()" class="w-full border border-slate-200 rounded p-1.5 text-xs text-right font-mono font-bold text-slate-800 standalone-amount" />
+        </td>
+        <td class="p-2 text-center">
+          <button onclick="this.closest('tr').remove(); calcQuoteTotals();" type="button" class="text-rose-500 hover:text-rose-700">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
       calcQuoteTotals();
     }
 
     function calcQuoteTotals() {
       let sum = 0;
+      // 1. 玻璃項目小計加總
       document.querySelectorAll('.item-row').forEach(row => {
         const val = Number(row.querySelector('.item-subtotal')?.value) || 0;
         sum += val;
       });
+      // 2. 獨立施工項目金額加總
+      document.querySelectorAll('.standalone-row').forEach(row => {
+        const val = Number(row.querySelector('.standalone-amount')?.value) || 0;
+        sum += val;
+      });
+
       const addon = Number(document.getElementById('q-addon').value) || 0;
       const discount = Number(document.getElementById('q-discount').value) || 0;
       const total = sum + addon + discount;
@@ -949,6 +970,7 @@
       document.getElementById('q-discount').value = j.discount || '';
       document.getElementById('q-notes').value = j.notes || '';
 
+      // 載入玻璃尺寸項目
       const container = document.getElementById('quote-items-container');
       container.innerHTML = '';
       if (j.items && j.items.length > 0) {
@@ -956,6 +978,16 @@
       } else {
         addQuoteItemRow();
       }
+
+      // 載入獨立施工項目
+      const standaloneBody = document.getElementById('standalone-work-items-body');
+      standaloneBody.innerHTML = '';
+      if (j.standaloneItems && j.standaloneItems.length > 0) {
+        j.standaloneItems.forEach(st => addStandaloneWorkItem(st));
+      } else {
+        addStandaloneWorkItem();
+      }
+
       switchTab('quote-builder');
     }
 
@@ -972,15 +1004,9 @@
       const discount = Number(document.getElementById('q-discount').value) || 0;
       const notes = document.getElementById('q-notes').value || '';
 
+      // 收集玻璃尺寸
       const items = [];
       document.querySelectorAll('.item-row').forEach(row => {
-        const subItems = [];
-        row.querySelectorAll('.sub-items-body tr').forEach(tr => {
-          const sName = tr.querySelector('.sub-item-name')?.value || '';
-          const sAmt = Number(tr.querySelector('.sub-item-amount')?.value) || 0;
-          if (sName || sAmt) subItems.push({ name: sName, amount: sAmt });
-        });
-
         items.push({
           name: row.querySelector('.item-name').value,
           l1: row.querySelector('.item-l1').value,
@@ -989,14 +1015,25 @@
           l2: row.querySelector('.item-l2').value,
           w2: Number(row.querySelector('.item-w2').value) || 0,
           h2: Number(row.querySelector('.item-h2').value) || 0,
-          subItems: subItems,
           subtotal: Number(row.querySelector('.item-subtotal').value) || 0,
           note: row.querySelector('.item-note').value
         });
       });
 
+      // 收集獨立施工項目
+      const standaloneItems = [];
+      document.querySelectorAll('.standalone-row').forEach(row => {
+        const name = row.querySelector('.standalone-name').value.trim();
+        const note = row.querySelector('.standalone-note').value.trim();
+        const amount = Number(row.querySelector('.standalone-amount').value) || 0;
+        if (name || amount > 0) {
+          standaloneItems.push({ name, note, amount });
+        }
+      });
+
       const updatedJob = {
-        id, client, phone, address, email, taxid, category, addon, discount, notes, items,
+        id, client, phone, address, email, taxid, category, addon, discount, notes,
+        items, standaloneItems,
         status: 'quoted', measureDate: mDate, workDate: ''
       };
 
@@ -1008,7 +1045,6 @@
       }
 
       persistJobs();
-      // 原生自動化：儲存時同步推送至 Google 日曆
       autoSyncToGoogleCalendar(updatedJob);
 
       alert(`✅ 已同步寫入雲端案場與 Google 日曆！\n單號：${id}`);
@@ -1034,8 +1070,9 @@
       const modalItemsBody = document.getElementById('modal-items-body');
       modalItemsBody.innerHTML = '';
       
+      // 1. 條列玻璃尺寸項目
       document.querySelectorAll('.item-row').forEach(row => {
-        const name = row.querySelector('.item-name').value || '施作項目';
+        const name = row.querySelector('.item-name').value || '玻璃施作';
         const l1 = row.querySelector('.item-l1').value || '固';
         const w1 = row.querySelector('.item-w1').value;
         const h1 = row.querySelector('.item-h1').value;
@@ -1052,30 +1089,38 @@
         let detailParts = [];
         if (w1 && h1) detailParts.push(`${l1}: ${w1}×${h1}cm (${cai1}才)`);
         if (w2 && h2) detailParts.push(`${l2}: ${w2}×${h2}cm (${cai2}才)`);
-        
-        let detailStr = detailParts.length > 0 ? `${detailParts.join(' / ')} ｜ 計 ${totalCai} 才` : '';
+        const detailStr = detailParts.length > 0 ? `${detailParts.join(' / ')} ｜ 計 ${totalCai} 才 (@$350)` : '現場依實測施作';
 
-        const subItemNames = [];
-        row.querySelectorAll('.sub-items-body tr').forEach(tr => {
-          const sName = tr.querySelector('.sub-item-name')?.value;
-          const sAmt = tr.querySelector('.sub-item-amount')?.value;
-          if (sName) subItemNames.push(`${sName}${sAmt ? ' ($'+Number(sAmt).toLocaleString()+')' : ''}`);
-        });
-
-        if (subItemNames.length > 0) {
-          detailStr += (detailStr ? ' ｜ ' : '') + '細項: ' + subItemNames.join('、');
+        if (w1 || w2 || Number(subtotal) > 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border-r border-black p-1 text-center font-medium">${name}</td>
+            <td class="border-r border-black p-1 font-mono">${detailStr}</td>
+            <td class="border-r border-black p-1 text-center font-mono">1</td>
+            <td class="border-r border-black p-1 text-right font-mono font-bold">${Number(subtotal).toLocaleString()}</td>
+            <td class="p-1">${note}</td>
+          `;
+          modalItemsBody.appendChild(tr);
         }
-        if (!detailStr) detailStr = '現場依實測施作';
+      });
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="border-r border-black p-1 text-center font-medium">${name}</td>
-          <td class="border-r border-black p-1 font-mono">${detailStr}</td>
-          <td class="border-r border-black p-1 text-center font-mono">1</td>
-          <td class="border-r border-black p-1 text-right font-mono font-bold">${Number(subtotal).toLocaleString()}</td>
-          <td class="p-1">${note}</td>
-        `;
-        modalItemsBody.appendChild(tr);
+      // 2. 條列獨立施工項目
+      document.querySelectorAll('.standalone-row').forEach(row => {
+        const name = row.querySelector('.standalone-name').value.trim();
+        const note = row.querySelector('.standalone-note').value.trim();
+        const amount = Number(row.querySelector('.standalone-amount').value) || 0;
+
+        if (name || amount > 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border-r border-black p-1 text-center font-medium">${name || '加收施作'}</td>
+            <td class="border-r border-black p-1 font-mono">施工項次費用</td>
+            <td class="border-r border-black p-1 text-center font-mono">1</td>
+            <td class="border-r border-black p-1 text-right font-mono font-bold">${amount.toLocaleString()}</td>
+            <td class="p-1">${note}</td>
+          `;
+          modalItemsBody.appendChild(tr);
+        }
       });
 
       document.getElementById('quote-modal').classList.remove('hidden');
@@ -1102,11 +1147,12 @@
         const start = d.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
         const end = new Date(d.getTime() + 3*60*60*1000).toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
         const isWork = !!j.workDate;
+        const mainItem = j.items?.[0]?.name || j.standaloneItems?.[0]?.name || '案場';
 
         ics.push('BEGIN:VEVENT');
         ics.push(`UID:${j.id}@jiashidu.tw`);
         ics.push(`DTSTAMP:${start}`);
-        ics.push(`SUMMARY:【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${j.items[0]?.name || '案場'}`);
+        ics.push(`SUMMARY:【家事鍍${isWork?'施工':'丈量'}】${j.client} - ${mainItem}`);
         ics.push(`DTSTART:${start}`);
         ics.push(`DTEND:${end}`);
         ics.push(`LOCATION:${j.address || '施工現場'}`);
@@ -1161,9 +1207,9 @@
           name: '',
           l1: '固', w1: '', h1: '',
           l2: '活', w2: '', h2: '',
-          subItems: [],
           subtotal: '', note: ''
         }],
+        standaloneItems: [],
         addon: '',
         discount: '',
         notes: ''
@@ -1171,10 +1217,7 @@
 
       jobs.unshift(newJob);
       persistJobs();
-      
-      // 原生自動化：新增案場時自動發送至 Google 日曆
       autoSyncToGoogleCalendar(newJob);
-
       renderJobList();
       alert(`✅ 案場建立成功並已同步雲端與 Google 日曆！\n單號為：${newId}`);
     }
@@ -1208,7 +1251,7 @@
       }
 
       completedJobs.forEach(j => {
-        const amount = calcTotal(j.items, j.addon, j.discount);
+        const amount = calcTotal(j.items, j.standaloneItems, j.addon, j.discount);
         const isA = j.category === 'A';
         const dateStr = j.workDate ? j.workDate.split('T')[0] : '2026-09-05';
 
@@ -1246,7 +1289,7 @@
       let tsv = `訂單開頭代碼\t客戶單號\t施作日期\t客戶名稱\t消費金額\t業務員\t施作人員\t貼膜(A)/鍍膜(B)\t公司\t案件來源\t來源隸屬人員\t地區主管\t地區業務\t施做領班\t施做金額\t施做人員\t施做獎金\t公司/業務/領班合計%數\t公司/業務/領班合計%數之獎金\t總計\n`;
       const completedJobs = jobs.filter(j => j.status === 'completed');
       completedJobs.forEach(j => {
-        const amt = calcTotal(j.items, j.addon, j.discount);
+        const amt = calcTotal(j.items, j.standaloneItems, j.addon, j.discount);
         const isA = j.category === 'A';
         const d = j.workDate ? j.workDate.split('T')[0] : '';
         const code = userProfile.code || 'AH';
@@ -1263,7 +1306,7 @@
       let csv = `\uFEFF訂單代碼,客戶單號,施作日期,客戶名稱,消費金額,業務員,類別,總計\n`;
       const completedJobs = jobs.filter(j => j.status === 'completed');
       completedJobs.forEach(j => {
-        const amt = calcTotal(j.items, j.addon, j.discount);
+        const amt = calcTotal(j.items, j.standaloneItems, j.addon, j.discount);
         const d = j.workDate ? j.workDate.split('T')[0] : '';
         csv += `${userProfile.code},${j.id},${d},${j.client},${amt},${userProfile.name},${j.category},${amt}\n`;
       });
@@ -1309,7 +1352,6 @@
       document.getElementById('label-prefix-display').innerText = code;
       document.getElementById('q-prefix-badge').innerText = `業務代碼: ${code}`;
 
-      // 檢查 GAS 自動化狀態
       if (userProfile.gasWebhookUrl && userProfile.gasWebhookUrl.startsWith("https://script.google.com")) {
         document.getElementById('gas-sync-dot').className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         document.getElementById('gas-sync-text').innerText = '日曆自動化已就緒';
@@ -1333,6 +1375,7 @@
       setupCloudSync();
       renderJobList();
       addQuoteItemRow();
+      addStandaloneWorkItem();
     };
   </script>
 </body>
