@@ -9,13 +9,16 @@
   <!-- Firebase SDK (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- html2pdf.js (純前端直接轉 PDF) -->
+  <!-- html2pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .html2pdf__page-break {
-      page-break-before: always;
+    .html2pdf__page-break { page-break-before: always; }
+    @media print {
+      body * { visibility: hidden; }
+      #pdf-export-container, #pdf-export-container * { visibility: visible; }
+      #pdf-export-container { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
     }
   </style>
 </head>
@@ -32,7 +35,6 @@
             <span class="bg-cyan-600 text-white font-black text-base px-2 py-0.5 rounded">家事鍍</span>
           </div>
         </div>
-        <!-- 雲端與自動化連線燈號 -->
         <div class="hidden md:flex items-center space-x-2 text-xs border-l border-slate-200 pl-2.5">
           <div class="flex items-center space-x-1">
             <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -55,7 +57,6 @@
         <button onclick="switchTab('profit-calc')" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100" data-tab="profit-calc">
           <i class="fa-solid fa-coins mr-1"></i>本月分潤
         </button>
-        <!-- 夥伴專屬個人設定按鈕 -->
         <button onclick="openProfileModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1" title="業務個人獨立設定">
           <i class="fa-solid fa-user-gear text-cyan-700"></i>
           <span id="nav-user-name" class="font-mono">Frank (AH)</span>
@@ -68,8 +69,6 @@
     
     <!-- 分頁 1: 案場總覽與預約排程 -->
     <section id="tab-dashboard" class="space-y-4 sm:space-y-6">
-      
-      <!-- 原生自動化同步橫幅 -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
@@ -136,16 +135,16 @@
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">現場丈量與報價單生成</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數與獨立施工項目分離填寫 ｜ 支援一鍵直接生成 PDF</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數與獨立施工項目分離填寫 ｜ 支援手機一鍵直接生成 PDF</p>
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
             <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
             <span>儲存至雲端案場</span>
           </button>
-          <button onclick="directExportPDF()" class="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1.5" title="不開預覽直接下載 PDF 檔案">
+          <button onclick="directExportPDF()" class="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1.5" title="手機相容直接生成 PDF">
             <i class="fa-solid fa-file-pdf"></i>
-            <span>直接生成 PDF</span>
+            <span>生成/下載 PDF</span>
           </button>
           <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
             <i class="fa-solid fa-eye"></i>
@@ -156,7 +155,6 @@
 
       <!-- 表單本體 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <!-- 客戶資訊 -->
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3.5">
           <h3 class="font-bold text-slate-800 border-b pb-2 text-sm flex items-center justify-between">
             <span>客戶與單號資訊</span>
@@ -370,18 +368,23 @@
     </div>
   </div>
 
-  <!-- 報價單彈出式視窗 (含直接下載 PDF 功能) -->
+  <!-- 報價單預覽與 PDF 下載視窗 -->
   <div id="quote-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div class="bg-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col">
       <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between shrink-0">
         <div class="flex items-center space-x-2">
           <i class="fa-solid fa-file-invoice text-cyan-400"></i>
-          <span class="font-bold text-sm">家事鍍標準兩頁式報價單預覽</span>
+          <span class="font-bold text-sm">家事鍍兩頁式報價單</span>
         </div>
         <div class="flex items-center space-x-2">
+          <!-- 手機原生列印 / 存為 PDF -->
+          <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center space-x-1 shadow-sm transition" title="手機原生日曆/列印存檔">
+            <i class="fa-solid fa-print"></i>
+            <span class="hidden sm:inline">系統列印</span>
+          </button>
           <button onclick="exportModalToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 shadow-sm transition">
             <i class="fa-solid fa-file-pdf"></i>
-            <span>下載此 PDF</span>
+            <span>下載/開啟 PDF</span>
           </button>
           <button onclick="closeQuoteModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">
             <i class="fa-solid fa-xmark"></i>
@@ -580,16 +583,13 @@
 
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [];
 
-    // 自動發送至 Google 日曆 (支援 create/update 與 delete)
     function autoSyncToGoogleCalendar(jobData, action = 'create') {
       const url = userProfile.gasWebhookUrl;
-      if (!url || !url.startsWith("https://script.google.com")) {
-        return;
-      }
+      if (!url || !url.startsWith("https://script.google.com")) return;
 
       const total = calcTotal(jobData.items, jobData.standaloneItems, jobData.addon, jobData.discount);
       const payload = {
-        action: action, // 傳送動作指令
+        action: action,
         type: jobData.workDate ? '施工' : '丈量',
         id: jobData.id,
         client: jobData.client || '未留姓名',
@@ -607,8 +607,6 @@
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      }).then(() => {
-        console.log(`✅ 已發送 [${action}] 指令至 Google 日曆 Webhook`);
       }).catch(err => {
         console.warn("GAS 自動拋送失敗：", err);
       });
@@ -695,15 +693,11 @@
       document.getElementById('q-id').value = generateOrderIdByDate(mDate, currentId);
     }
 
-    // 刪除案場：同步刪除本地、Firebase 雲端與 Google 日曆事件
     function deleteJob(idx) {
       const j = jobs[idx];
       if (!j) return;
       if (confirm(`確定要刪除案場【${j.client || '未命名'} (${j.id})】嗎？\n此動作將一併從 Google 日曆自動移除該行程。`)) {
-        // 1. 同步通知 GAS 刪除 Google 日曆事件
         autoSyncToGoogleCalendar(j, 'delete');
-
-        // 2. 移除本地與 Firebase 資料
         jobs.splice(idx, 1);
         persistJobs();
         renderJobList();
@@ -1081,7 +1075,6 @@
       const modalItemsBody = document.getElementById('modal-items-body');
       modalItemsBody.innerHTML = '';
       
-      // 1. 條列玻璃尺寸項目
       document.querySelectorAll('.item-row').forEach(row => {
         const name = row.querySelector('.item-name').value || '玻璃施作';
         const l1 = row.querySelector('.item-l1').value || '固';
@@ -1115,7 +1108,6 @@
         }
       });
 
-      // 2. 條列獨立施工項目
       document.querySelectorAll('.standalone-row').forEach(row => {
         const name = row.querySelector('.standalone-name').value.trim();
         const note = row.querySelector('.standalone-note').value.trim();
@@ -1144,7 +1136,7 @@
       document.getElementById('quote-modal').classList.add('hidden');
     }
 
-    // 純前端高解析度轉 PDF
+    // 手機/電腦通用雙軌 PDF 生成引擎
     function exportModalToPDF() {
       const orderId = document.getElementById('q-id').value || 'AH';
       const clientName = document.getElementById('q-client').value || '客戶';
@@ -1153,7 +1145,7 @@
       const element = document.getElementById('pdf-export-container');
 
       const opt = {
-        margin: [5, 5, 5, 5],
+        margin: [3, 3, 3, 3],
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
@@ -1161,9 +1153,31 @@
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        console.log("PDF 下載完成");
-      });
+      // 檢查是否為行動裝置
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // 行動裝置專用：生成 Blob 並直接在新視窗打開，供長按下載或分享 LINE
+        html2pdf().set(opt).from(element).outputPdf('blob').then(function(pdfBlob) {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const newWindow = window.open(blobUrl, '_blank');
+          if (!newWindow) {
+            // 若被彈出視窗攔截，則以傳統下載觸發
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        }).catch(err => {
+          console.warn("轉 PDF 失敗，喚醒系統列印", err);
+          window.print();
+        });
+      } else {
+        // 電腦端直接觸發檔案儲存
+        html2pdf().set(opt).from(element).save();
+      }
     }
 
     function directExportPDF() {
