@@ -9,12 +9,11 @@
   <!-- Firebase SDK (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- html2pdf.js (純前端高品質直接轉 PDF) -->
+  <!-- html2pdf.js (純前端直接轉 PDF) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    /* 列印與 PDF 專用分頁斷點 */
     .html2pdf__page-break {
       page-break-before: always;
     }
@@ -69,6 +68,8 @@
     
     <!-- 分頁 1: 案場總覽與預約排程 -->
     <section id="tab-dashboard" class="space-y-4 sm:space-y-6">
+      
+      <!-- 原生自動化同步橫幅 -->
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
@@ -76,11 +77,11 @@
           </div>
           <div>
             <h3 class="font-bold text-sm sm:text-base flex items-center">
-              <span>Google 日曆零延遲自動同步中樞</span>
+              <span>Google 日曆雙向自動同步（新增/改期/自動刪除）</span>
               <span class="ml-2 text-[10px] bg-emerald-950/40 px-2 py-0.5 rounded font-mono font-bold" id="badge-gas-status">原生自動化已整合</span>
             </h3>
             <p class="text-xs text-emerald-100 mt-0.5" id="auto-sync-desc">
-              案場儲存後自動秒級寫入 Google 日曆，TimeTree 團隊日曆即時連動呈現！
+              案場儲存自動新增至日曆，網頁刪除時 Google 日曆行程亦自動同步移除！
             </p>
           </div>
         </div>
@@ -107,7 +108,7 @@
             <span class="font-bold text-slate-800 text-sm sm:text-base">案場排程清單</span>
             <span id="job-count-badge" class="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full font-bold">0 件</span>
           </div>
-          <span class="text-[11px] text-slate-400">雙向自動同步 ｜ 點擊卡片可切換狀態、修改報價或刪除</span>
+          <span class="text-[11px] text-slate-400">點擊垃圾桶確認後將一併自動從 Google 日曆刪除行程</span>
         </div>
 
         <div id="job-cards-container" class="p-3 space-y-3 sm:hidden"></div>
@@ -146,7 +147,7 @@
             <i class="fa-solid fa-file-pdf"></i>
             <span>直接生成 PDF</span>
           </button>
-          <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
+          <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
             <i class="fa-solid fa-eye"></i>
             <span>預覽報價單</span>
           </button>
@@ -357,7 +358,7 @@
             <span class="text-[10px] text-emerald-600 font-semibold">自動同步日曆</span>
           </label>
           <input type="url" id="prof-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg p-2 font-mono text-[11px]" />
-          <span class="text-[10px] text-slate-400 mt-1 block">填入部署產生的 Web App URL，案件儲存即自動寫入 Google 日曆。</span>
+          <span class="text-[10px] text-slate-400 mt-1 block">填入部署產生的 Web App URL，案件儲存或刪除時即自動同步 Google 日曆。</span>
         </div>
       </div>
 
@@ -579,7 +580,8 @@
 
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [];
 
-    function autoSyncToGoogleCalendar(jobData) {
+    // 自動發送至 Google 日曆 (支援 create/update 與 delete)
+    function autoSyncToGoogleCalendar(jobData, action = 'create') {
       const url = userProfile.gasWebhookUrl;
       if (!url || !url.startsWith("https://script.google.com")) {
         return;
@@ -587,6 +589,7 @@
 
       const total = calcTotal(jobData.items, jobData.standaloneItems, jobData.addon, jobData.discount);
       const payload = {
+        action: action, // 傳送動作指令
         type: jobData.workDate ? '施工' : '丈量',
         id: jobData.id,
         client: jobData.client || '未留姓名',
@@ -604,6 +607,8 @@
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
+      }).then(() => {
+        console.log(`✅ 已發送 [${action}] 指令至 Google 日曆 Webhook`);
       }).catch(err => {
         console.warn("GAS 自動拋送失敗：", err);
       });
@@ -690,10 +695,15 @@
       document.getElementById('q-id').value = generateOrderIdByDate(mDate, currentId);
     }
 
+    // 刪除案場：同步刪除本地、Firebase 雲端與 Google 日曆事件
     function deleteJob(idx) {
       const j = jobs[idx];
       if (!j) return;
-      if (confirm(`確定要刪除案場【${j.client} (${j.id})】嗎？\n此動作無法還原。`)) {
+      if (confirm(`確定要刪除案場【${j.client || '未命名'} (${j.id})】嗎？\n此動作將一併從 Google 日曆自動移除該行程。`)) {
+        // 1. 同步通知 GAS 刪除 Google 日曆事件
+        autoSyncToGoogleCalendar(j, 'delete');
+
+        // 2. 移除本地與 Firebase 資料
         jobs.splice(idx, 1);
         persistJobs();
         renderJobList();
@@ -722,7 +732,7 @@
             <span class="font-mono text-xs font-bold text-cyan-800">${j.id}</span>
             <div class="flex items-center space-x-1.5">
               ${statusBadge}
-              <button onclick="deleteJob(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="刪除此案場">
+              <button onclick="deleteJob(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="刪除此案場與日曆">
                 <i class="fa-solid fa-trash-can text-xs"></i>
               </button>
             </div>
@@ -781,7 +791,7 @@
             <button onclick="markJobStatus(${idx})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg font-bold">
               狀態
             </button>
-            <button onclick="deleteJob(${idx})" class="text-xs text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg transition" title="刪除案場">
+            <button onclick="deleteJob(${idx})" class="text-xs text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg transition" title="刪除此案場與日曆">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </td>
@@ -1046,13 +1056,12 @@
       }
 
       persistJobs();
-      autoSyncToGoogleCalendar(updatedJob);
+      autoSyncToGoogleCalendar(updatedJob, 'create');
 
       alert(`✅ 已同步寫入雲端案場與 Google 日曆！\n單號：${id}`);
       renderJobList();
     }
 
-    // 填充報價單 DOM 數據
     function fillQuoteModalData() {
       const totals = calcQuoteTotals();
 
@@ -1135,7 +1144,7 @@
       document.getElementById('quote-modal').classList.add('hidden');
     }
 
-    // 核心升級：純前端高品質轉 PDF 下載
+    // 純前端高解析度轉 PDF
     function exportModalToPDF() {
       const orderId = document.getElementById('q-id').value || 'AH';
       const clientName = document.getElementById('q-client').value || '客戶';
@@ -1152,13 +1161,11 @@
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      // 執行生成與下載
       html2pdf().set(opt).from(element).save().then(() => {
         console.log("PDF 下載完成");
       });
     }
 
-    // 快捷直接匯出 PDF（不需開啟 Modal）
     function directExportPDF() {
       fillQuoteModalData();
       exportModalToPDF();
@@ -1251,7 +1258,7 @@
 
       jobs.unshift(newJob);
       persistJobs();
-      autoSyncToGoogleCalendar(newJob);
+      autoSyncToGoogleCalendar(newJob, 'create');
       renderJobList();
       alert(`✅ 案場建立成功並已同步雲端與 Google 日曆！\n單號為：${newId}`);
     }
