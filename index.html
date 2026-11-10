@@ -9,9 +9,15 @@
   <!-- Firebase SDK (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- html2pdf.js (純前端高品質直接轉 PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* 列印與 PDF 專用分頁斷點 */
+    .html2pdf__page-break {
+      page-break-before: always;
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -63,7 +69,6 @@
     
     <!-- 分頁 1: 案場總覽與預約排程 -->
     <section id="tab-dashboard" class="space-y-4 sm:space-y-6">
-      
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
@@ -105,10 +110,8 @@
           <span class="text-[11px] text-slate-400">雙向自動同步 ｜ 點擊卡片可切換狀態、修改報價或刪除</span>
         </div>
 
-        <!-- 手機檢視 (Card Layout) -->
         <div id="job-cards-container" class="p-3 space-y-3 sm:hidden"></div>
 
-        <!-- 桌面平板檢視 (Table Layout) -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-xs">
@@ -127,21 +130,25 @@
       </div>
     </section>
 
-    <!-- 分頁 2: 現場丈量與即時報價 (結構完全獨立版) -->
+    <!-- 分頁 2: 現場丈量與即時報價 -->
     <section id="tab-quote-builder" class="space-y-4 sm:space-y-6 hidden">
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">現場丈量與報價單生成</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數試算與獨立施工項目金額表格分離填寫，自動彙總總價</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數與獨立施工項目分離填寫 ｜ 支援一鍵直接生成 PDF</p>
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
             <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
             <span>儲存至雲端案場</span>
           </button>
-          <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
-            <i class="fa-solid fa-file-invoice"></i>
-            <span>生成報價單預覽</span>
+          <button onclick="directExportPDF()" class="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1.5" title="不開預覽直接下載 PDF 檔案">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>直接生成 PDF</span>
+          </button>
+          <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-eye"></i>
+            <span>預覽報價單</span>
           </button>
         </div>
       </div>
@@ -193,9 +200,7 @@
           </div>
         </div>
 
-        <!-- 施工項目明細（區塊一：尺寸才數 ＋ 區塊二：獨立施工項目表格） -->
         <div class="lg:col-span-2 space-y-4">
-          
           <!-- 區塊一：玻璃尺寸與才數試算 -->
           <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between border-b pb-2">
@@ -209,11 +214,10 @@
                 <i class="fa-solid fa-plus mr-1"></i>加一處尺寸
               </button>
             </div>
-            <!-- 尺寸卡片容器 -->
             <div class="space-y-3" id="quote-items-container"></div>
           </div>
 
-          <!-- 區塊二：獨立施工項目與金額表格 (不掛在寬高內) -->
+          <!-- 區塊二：獨立施工項目與金額明細表格 -->
           <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between border-b pb-2">
               <div class="flex items-center space-x-2">
@@ -226,7 +230,6 @@
                 <i class="fa-solid fa-plus mr-1"></i>新增施工項目
               </button>
             </div>
-            <!-- 獨立表格 -->
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-[11px] text-slate-500 font-bold border-b">
@@ -237,14 +240,12 @@
                     <th class="p-2 w-10 text-center">刪除</th>
                   </tr>
                 </thead>
-                <tbody id="standalone-work-items-body" class="divide-y divide-slate-100">
-                  <!-- 動態項目 -->
-                </tbody>
+                <tbody id="standalone-work-items-body" class="divide-y divide-slate-100"></tbody>
               </table>
             </div>
           </div>
 
-          <!-- 金額加總彙整 -->
+          <!-- 金額彙總 -->
           <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -320,7 +321,7 @@
 
   </main>
 
-  <!-- 業務人員專屬設定彈窗 (含 GAS Webhook 設定) -->
+  <!-- 業務人員專屬設定彈窗 -->
   <div id="profile-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
       <div class="flex items-center justify-between border-b pb-3">
@@ -356,7 +357,7 @@
             <span class="text-[10px] text-emerald-600 font-semibold">自動同步日曆</span>
           </label>
           <input type="url" id="prof-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg p-2 font-mono text-[11px]" />
-          <span class="text-[10px] text-slate-400 mt-1 block">填入步驟一產生的 Web App URL，案件儲存即自動寫入 Google 日曆。</span>
+          <span class="text-[10px] text-slate-400 mt-1 block">填入部署產生的 Web App URL，案件儲存即自動寫入 Google 日曆。</span>
         </div>
       </div>
 
@@ -368,7 +369,7 @@
     </div>
   </div>
 
-  <!-- 報價單彈出式視窗 -->
+  <!-- 報價單彈出式視窗 (含直接下載 PDF 功能) -->
   <div id="quote-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div class="bg-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col">
       <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between shrink-0">
@@ -376,14 +377,22 @@
           <i class="fa-solid fa-file-invoice text-cyan-400"></i>
           <span class="font-bold text-sm">家事鍍標準兩頁式報價單預覽</span>
         </div>
-        <button onclick="closeQuoteModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <div class="flex items-center space-x-2">
+          <button onclick="exportModalToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 shadow-sm transition">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>下載此 PDF</span>
+          </button>
+          <button onclick="closeQuoteModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
       
-      <div class="p-3 sm:p-6 overflow-y-auto space-y-4">
+      <!-- 轉 PDF 的兩頁內容容器 -->
+      <div class="p-3 sm:p-6 overflow-y-auto space-y-4" id="pdf-export-container">
+        
         <!-- PAGE 1: 報價主表 -->
-        <div class="bg-white text-black p-4 sm:p-8 rounded-xl shadow border border-slate-300 text-xs leading-tight">
+        <div class="bg-white text-black p-4 sm:p-8 rounded-xl shadow border border-slate-300 text-xs leading-tight" id="pdf-page-1">
           <div class="flex justify-between items-center border-b-2 border-black pb-2.5">
             <div class="flex items-center space-x-3">
               <div class="w-32 sm:w-36 flex items-center justify-center">
@@ -483,8 +492,10 @@
           <div class="text-right text-[9px] text-gray-400 mt-1">第 1 頁 / 共 2 頁</div>
         </div>
 
+        <div class="html2pdf__page-break"></div>
+
         <!-- PAGE 2: 附件1 -->
-        <div class="bg-white text-black p-4 sm:p-8 rounded-xl shadow border border-slate-300 text-xs leading-tight">
+        <div class="bg-white text-black p-4 sm:p-8 rounded-xl shadow border border-slate-300 text-xs leading-tight" id="pdf-page-2">
           <div class="text-[10px] text-gray-500 italic mb-1">附件 1</div>
           <div class="bg-cyan-700 text-white p-2 rounded-lg flex items-center space-x-2 text-xs font-bold">
             <i class="fa-solid fa-circle-info"></i>
@@ -568,7 +579,6 @@
 
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [];
 
-    // 自動發送至 Google 日曆 (GAS Webhook)
     function autoSyncToGoogleCalendar(jobData) {
       const url = userProfile.gasWebhookUrl;
       if (!url || !url.startsWith("https://script.google.com")) {
@@ -780,14 +790,12 @@
       });
     }
 
-    // 計算總額：玻璃項目小計 + 獨立施工項目金額 + 加購 + 折扣
     function calcTotal(items = [], standaloneItems = [], addon = 0, discount = 0) {
       const sum1 = (items || []).reduce((acc, cur) => acc + (Number(cur.subtotal) || 0), 0);
       const sum2 = (standaloneItems || []).reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
       return sum1 + sum2 + Number(addon || 0) + Number(discount || 0);
     }
 
-    // 區塊一：玻璃尺寸卡片
     function addQuoteItemRow(data = {}) {
       const container = document.getElementById('quote-items-container');
       const rowId = 'item-' + Date.now() + Math.random().toString(36).substr(2, 4);
@@ -897,7 +905,6 @@
       calcQuoteTotals();
     }
 
-    // 區塊二：獨立施工項目與金額表格
     function addStandaloneWorkItem(data = {}) {
       const tbody = document.getElementById('standalone-work-items-body');
       const tr = document.createElement('tr');
@@ -928,12 +935,10 @@
 
     function calcQuoteTotals() {
       let sum = 0;
-      // 1. 玻璃項目小計加總
       document.querySelectorAll('.item-row').forEach(row => {
         const val = Number(row.querySelector('.item-subtotal')?.value) || 0;
         sum += val;
       });
-      // 2. 獨立施工項目金額加總
       document.querySelectorAll('.standalone-row').forEach(row => {
         const val = Number(row.querySelector('.standalone-amount')?.value) || 0;
         sum += val;
@@ -970,7 +975,6 @@
       document.getElementById('q-discount').value = j.discount || '';
       document.getElementById('q-notes').value = j.notes || '';
 
-      // 載入玻璃尺寸項目
       const container = document.getElementById('quote-items-container');
       container.innerHTML = '';
       if (j.items && j.items.length > 0) {
@@ -979,7 +983,6 @@
         addQuoteItemRow();
       }
 
-      // 載入獨立施工項目
       const standaloneBody = document.getElementById('standalone-work-items-body');
       standaloneBody.innerHTML = '';
       if (j.standaloneItems && j.standaloneItems.length > 0) {
@@ -1004,7 +1007,6 @@
       const discount = Number(document.getElementById('q-discount').value) || 0;
       const notes = document.getElementById('q-notes').value || '';
 
-      // 收集玻璃尺寸
       const items = [];
       document.querySelectorAll('.item-row').forEach(row => {
         items.push({
@@ -1020,7 +1022,6 @@
         });
       });
 
-      // 收集獨立施工項目
       const standaloneItems = [];
       document.querySelectorAll('.standalone-row').forEach(row => {
         const name = row.querySelector('.standalone-name').value.trim();
@@ -1051,7 +1052,8 @@
       renderJobList();
     }
 
-    function generateQuoteModal() {
+    // 填充報價單 DOM 數據
+    function fillQuoteModalData() {
       const totals = calcQuoteTotals();
 
       document.getElementById('modal-order-id').innerText = `訂單編號：${document.getElementById('q-id').value}`;
@@ -1122,12 +1124,44 @@
           modalItemsBody.appendChild(tr);
         }
       });
+    }
 
+    function generateQuoteModal() {
+      fillQuoteModalData();
       document.getElementById('quote-modal').classList.remove('hidden');
     }
 
     function closeQuoteModal() {
       document.getElementById('quote-modal').classList.add('hidden');
+    }
+
+    // 核心升級：純前端高品質轉 PDF 下載
+    function exportModalToPDF() {
+      const orderId = document.getElementById('q-id').value || 'AH';
+      const clientName = document.getElementById('q-client').value || '客戶';
+      const filename = `家事鍍報價單_${orderId}_${clientName}.pdf`;
+
+      const element = document.getElementById('pdf-export-container');
+
+      const opt = {
+        margin: [5, 5, 5, 5],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+
+      // 執行生成與下載
+      html2pdf().set(opt).from(element).save().then(() => {
+        console.log("PDF 下載完成");
+      });
+    }
+
+    // 快捷直接匯出 PDF（不需開啟 Modal）
+    function directExportPDF() {
+      fillQuoteModalData();
+      exportModalToPDF();
     }
 
     function buildFullICS() {
