@@ -6,6 +6,9 @@
   <title>家事鍍 - 營運管理與報價系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Firebase SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -24,7 +27,11 @@
             <span class="bg-cyan-600 text-white font-black text-base px-2 py-0.5 rounded">家事鍍</span>
           </div>
         </div>
-        <span class="text-xs font-bold text-slate-500 hidden md:inline border-l border-slate-200 pl-2.5">現場丈量 ‧ 報價生成 ‧ Webcal真實訂閱 ‧ 分潤中心</span>
+        <!-- 雲端即時同步狀態燈號 -->
+        <div class="hidden md:flex items-center space-x-1 text-xs border-l border-slate-200 pl-2.5">
+          <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="cloud-sync-text" class="text-slate-500 font-medium">Firebase 連線中...</span>
+        </div>
       </div>
       <div class="flex items-center space-x-1 sm:space-x-2">
         <button onclick="switchTab('dashboard')" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition bg-cyan-50 text-cyan-700" data-tab="dashboard">
@@ -54,15 +61,15 @@
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div class="flex items-start space-x-3">
           <div class="bg-white/20 p-2.5 rounded-xl shrink-0 mt-0.5">
-            <i class="fa-solid fa-rss text-lg"></i>
+            <i class="fa-solid fa-cloud-bolt text-lg"></i>
           </div>
           <div>
             <h3 class="font-bold text-sm sm:text-base flex items-center">
-              <span>TimeTree / 手機日曆 Webcal 訂閱網址</span>
+              <span>手機與電腦跨裝置即時同步 ＆ TimeTree 訂閱</span>
               <span class="ml-2 text-[10px] bg-emerald-950/40 px-2 py-0.5 rounded font-mono font-bold" id="badge-calendar-file">calendar_ah.ics</span>
             </h3>
             <p class="text-xs text-emerald-100 mt-0.5" id="webcal-desc-text">
-              載入中...
+              手機現場丈量儲存，電腦辦公室螢幕秒級自動跳出更新！
             </p>
           </div>
         </div>
@@ -89,7 +96,7 @@
             <span class="font-bold text-slate-800 text-sm sm:text-base">案場排程清單</span>
             <span id="job-count-badge" class="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full font-bold">0 件</span>
           </div>
-          <span class="text-[11px] text-slate-400">點擊卡片可切換狀態、修改報價或刪除</span>
+          <span class="text-[11px] text-slate-400">跨裝置即時連動 ｜ 點擊卡片可切換狀態、修改報價或刪除</span>
         </div>
 
         <!-- 手機檢視 (Card Layout) -->
@@ -123,8 +130,8 @@
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
-            <i class="fa-solid fa-floppy-disk"></i>
-            <span>儲存至案場</span>
+            <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
+            <span>儲存至雲端案場</span>
           </button>
           <button onclick="generateQuoteModal()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
             <i class="fa-solid fa-file-invoice"></i>
@@ -475,15 +482,42 @@
   </div>
 
   <script>
-    // 方案 A 核心：專屬業務代碼與個人資料
+    // ==========================================
+    // 方案 B：已為您填入剛剛提供的 Firebase 專屬配置
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSJP9hWeJmUHicbis-O2mbbeH80xkzoWE",
+      authDomain: "just-do-ops.firebaseapp.com",
+      databaseURL: "https://just-do-ops-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "just-do-ops",
+      storageBucket: "just-do-ops.firebasestorage.app",
+      messagingSenderId: "292696453647",
+      appId: "1:292696453647:web:08c6ec1027ee016346297a",
+      measurementId: "G-93H4BCVWY3"
+    };
+
+    let fbDatabase = null;
+    let isCloudEnabled = false;
+
+    try {
+      if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        fbDatabase = firebase.database();
+        isCloudEnabled = true;
+      }
+    } catch (e) {
+      console.warn("Firebase 初始化提示：目前採用本機模式運作", e);
+    }
+
+    // 業務專屬資料
     let userProfile = JSON.parse(localStorage.getItem('jiashidu_user_profile')) || {
       name: 'Frank',
-      code: 'AH', // 專屬業務代號 (前兩碼)
+      code: 'AH',
       phone: '0912345678',
       supervisor: 'Alex'
     };
 
-    // 案場資料
+    // 案場資料集
     let jobs = JSON.parse(localStorage.getItem('jiashidu_jobs')) || [
       {
         id: 'AH2026112101',
@@ -510,7 +544,44 @@
       }
     ];
 
-    // 動態單號產生：業務專屬代號(如 AH) + 丈量年月日(如 20261121) + 當日場次序號(如 01)
+    // 雲端資料庫即時監聽 (按業務代號獨立分群)
+    function setupCloudSync() {
+      if (!isCloudEnabled || !fbDatabase) {
+        document.getElementById('cloud-sync-dot').className = 'w-2 h-2 rounded-full bg-amber-500';
+        document.getElementById('cloud-sync-text').innerText = '本機快取模式';
+        return;
+      }
+
+      const pfx = (userProfile.code || 'AH').toUpperCase();
+      const jobsRef = fbDatabase.ref(`jiashidu_ops/${pfx}/jobs`);
+
+      // 監聽雲端資料變動 (手機新增，電腦即時更新)
+      jobsRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          jobs = Array.isArray(val) ? val : Object.values(val);
+          localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+          renderJobList();
+          renderProfitTable();
+        }
+        document.getElementById('cloud-sync-dot').className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        document.getElementById('cloud-sync-text').innerText = `雲端秒級連線 (${pfx})`;
+      }, (err) => {
+        console.error("Firebase 連線錯誤：", err);
+        document.getElementById('cloud-sync-dot').className = 'w-2 h-2 rounded-full bg-rose-500';
+        document.getElementById('cloud-sync-text').innerText = '請檢查資料庫規則';
+      });
+    }
+
+    // 寫入資料（同步寫入 LocalStorage 與 Firebase 雲端）
+    function persistJobs() {
+      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+      if (isCloudEnabled && fbDatabase) {
+        const pfx = (userProfile.code || 'AH').toUpperCase();
+        fbDatabase.ref(`jiashidu_ops/${pfx}/jobs`).set(jobs);
+      }
+    }
+
     function generateOrderIdByDate(dateTimeStr, currentJobId = null) {
       if (!dateTimeStr) dateTimeStr = new Date().toISOString().slice(0, 16);
       const parts = dateTimeStr.split('T')[0].split('-');
@@ -562,7 +633,7 @@
       if (!j) return;
       if (confirm(`確定要刪除案場【${j.client} (${j.id})】嗎？\n此動作無法還原。`)) {
         jobs.splice(idx, 1);
-        localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+        persistJobs();
         renderJobList();
       }
     }
@@ -856,8 +927,8 @@
         });
       }
 
-      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
-      alert(`✅ 已儲存至案場清單！\n單號：${id}`);
+      persistJobs();
+      alert(`✅ 已同步寫入雲端案場！\n單號：${id}`);
       renderJobList();
     }
 
@@ -1021,9 +1092,9 @@
         discount: 0,
         notes: ''
       });
-      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+      persistJobs();
       renderJobList();
-      alert(`✅ 案場建立成功！\n單號為：${newId} (${userProfile.code} 專屬)`);
+      alert(`✅ 案場建立成功並已同步雲端！\n單號為：${newId}`);
     }
 
     function markJobStatus(idx) {
@@ -1035,7 +1106,7 @@
         'completed': 'pending_measure'
       };
       jobs[idx].status = nextMap[current] || 'pending_measure';
-      localStorage.setItem('jiashidu_jobs', JSON.stringify(jobs));
+      persistJobs();
       renderJobList();
     }
 
@@ -1144,7 +1215,8 @@
       
       closeProfileModal();
       applyUserProfileUI();
-      alert(`✅ 業務專屬設定儲存成功！\n業務姓名：${name}\n專屬單號代碼：${code}\n範例單號：${generateOrderIdByDate(new Date().toISOString())}`);
+      setupCloudSync(); // 重新綁定新代碼的雲端監聽
+      alert(`✅ 業務專屬設定儲存成功！\n業務姓名：${name}\n專屬單號代碼：${code}`);
     }
 
     function applyUserProfileUI() {
@@ -1158,7 +1230,7 @@
       const wUrl = getWebcalUrl();
       const descEl = document.getElementById('webcal-desc-text');
       if (descEl) {
-        descEl.innerHTML = `【${userProfile.name} (${code}) 專屬】：<span class="font-mono text-white underline">${wUrl}</span><br>複製此網址貼入 TimeTree，即可達成個人獨立同步！`;
+        descEl.innerHTML = `【${userProfile.name} (${code}) 專屬】：<span class="font-mono text-white underline">${wUrl}</span><br>手機現場填寫，電腦自動秒級連動！`;
       }
 
       const mDate = document.getElementById('q-measure-date').value || new Date().toISOString().slice(0, 16);
@@ -1171,6 +1243,7 @@
       document.getElementById('q-measure-date').value = nowStr;
       
       applyUserProfileUI();
+      setupCloudSync(); // 啟動 Firebase 雲端雙向即時連動
       renderJobList();
       addQuoteItemRow();
     };
