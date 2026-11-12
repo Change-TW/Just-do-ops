@@ -9,7 +9,7 @@
   <!-- Firebase SDK (v9 compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- html2pdf.js -->
+  <!-- html2pdf.js 純前端匯出 PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -35,6 +35,7 @@
             <span class="bg-cyan-600 text-white font-black text-base px-2 py-0.5 rounded">家事鍍</span>
           </div>
         </div>
+        <!-- 雲端與自動化連線燈號 -->
         <div class="hidden md:flex items-center space-x-2 text-xs border-l border-slate-200 pl-2.5">
           <div class="flex items-center space-x-1">
             <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -57,6 +58,7 @@
         <button onclick="switchTab('profit-calc')" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-slate-600 hover:bg-slate-100" data-tab="profit-calc">
           <i class="fa-solid fa-coins mr-1"></i>本月分潤
         </button>
+        <!-- 夥伴專屬個人設定按鈕 -->
         <button onclick="openProfileModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1" title="業務個人獨立設定">
           <i class="fa-solid fa-user-gear text-cyan-700"></i>
           <span id="nav-user-name" class="font-mono">Frank (AH)</span>
@@ -130,12 +132,12 @@
       </div>
     </section>
 
-    <!-- 分頁 2: 現場丈量與即時報價 -->
+    <!-- 分頁 2: 現場丈量與即時報價 (結構完全獨立版) -->
     <section id="tab-quote-builder" class="space-y-4 sm:space-y-6 hidden">
       <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">現場丈量與報價單生成</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數與獨立施工項目分離填寫 ｜ 支援手機一鍵直接生成 PDF</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">尺寸才數試算與獨立施工項目金額表格分離填寫 ｜ 支援手機高解析度生成 PDF</p>
         </div>
         <div class="flex items-center space-x-2 w-full md:w-auto">
           <button onclick="saveCurrentQuoteToJobs()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs shadow-sm flex items-center justify-center space-x-1">
@@ -155,6 +157,7 @@
 
       <!-- 表單本體 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- 客戶資訊 -->
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3.5">
           <h3 class="font-bold text-slate-800 border-b pb-2 text-sm flex items-center justify-between">
             <span>客戶與單號資訊</span>
@@ -216,7 +219,7 @@
             <div class="space-y-3" id="quote-items-container"></div>
           </div>
 
-          <!-- 區塊二：獨立施工項目與金額明細表格 -->
+          <!-- 區塊二：獨立施工項目與金額表格 (不掛在寬高內) -->
           <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between border-b pb-2">
               <div class="flex items-center space-x-2">
@@ -377,7 +380,6 @@
           <span class="font-bold text-sm">家事鍍兩頁式報價單</span>
         </div>
         <div class="flex items-center space-x-2">
-          <!-- 手機原生列印 / 存為 PDF -->
           <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center space-x-1 shadow-sm transition" title="手機原生日曆/列印存檔">
             <i class="fa-solid fa-print"></i>
             <span class="hidden sm:inline">系統列印</span>
@@ -937,29 +939,6 @@
       calcQuoteTotals();
     }
 
-    function calcQuoteTotals() {
-      let sum = 0;
-      document.querySelectorAll('.item-row').forEach(row => {
-        const val = Number(row.querySelector('.item-subtotal')?.value) || 0;
-        sum += val;
-      });
-      document.querySelectorAll('.standalone-row').forEach(row => {
-        const val = Number(row.querySelector('.standalone-amount')?.value) || 0;
-        sum += val;
-      });
-
-      const addon = Number(document.getElementById('q-addon').value) || 0;
-      const discount = Number(document.getElementById('q-discount').value) || 0;
-      const total = sum + addon + discount;
-      const deposit = Math.round(total * 0.3);
-      const balance = total - deposit;
-
-      document.getElementById('q-final-total').innerText = `NT$ ${total.toLocaleString()}`;
-      document.getElementById('q-deposit-calc').innerText = deposit.toLocaleString();
-      document.getElementById('q-balance-calc').innerText = balance.toLocaleString();
-      return { sum, addon, discount, total, deposit, balance };
-    }
-
     function loadJobToQuote(idx) {
       const j = jobs[idx];
       const mDateVal = j.measureDate || new Date().toISOString().slice(0, 16);
@@ -1075,6 +1054,7 @@
       const modalItemsBody = document.getElementById('modal-items-body');
       modalItemsBody.innerHTML = '';
       
+      // 1. 條列玻璃尺寸項目
       document.querySelectorAll('.item-row').forEach(row => {
         const name = row.querySelector('.item-name').value || '玻璃施作';
         const l1 = row.querySelector('.item-l1').value || '固';
@@ -1108,6 +1088,7 @@
         }
       });
 
+      // 2. 條列獨立施工項目
       document.querySelectorAll('.standalone-row').forEach(row => {
         const name = row.querySelector('.standalone-name').value.trim();
         const note = row.querySelector('.standalone-note').value.trim();
@@ -1153,16 +1134,13 @@
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      // 檢查是否為行動裝置
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // 行動裝置專用：生成 Blob 並直接在新視窗打開，供長按下載或分享 LINE
         html2pdf().set(opt).from(element).outputPdf('blob').then(function(pdfBlob) {
           const blobUrl = URL.createObjectURL(pdfBlob);
           const newWindow = window.open(blobUrl, '_blank');
           if (!newWindow) {
-            // 若被彈出視窗攔截，則以傳統下載觸發
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = filename;
@@ -1175,7 +1153,6 @@
           window.print();
         });
       } else {
-        // 電腦端直接觸發檔案儲存
         html2pdf().set(opt).from(element).save();
       }
     }
