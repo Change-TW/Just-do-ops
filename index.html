@@ -830,6 +830,52 @@
       return sum1 + sum2 + Number(addon || 0) + Number(discount || 0);
     }
 
+    function buildPaneHTML(rowId, label = '固', w = '', h = '') {
+      const cai = calcCai(w, h);
+      const isFixed = label === '固';
+      const badgeBg = isFixed ? 'bg-slate-200 text-slate-700' : 'bg-cyan-100 text-cyan-800';
+      return `
+        <div class="pane-item flex items-center space-x-1.5 bg-slate-50/80 p-1.5 rounded-lg border border-slate-200/80">
+          <select onchange="updatePaneBadge(this); updateRowCai('${rowId}')" class="w-12 border border-slate-300 rounded p-1 text-xs text-center font-black ${badgeBg} pane-label" title="選擇片別">
+            <option value="固" ${label === '固' ? 'selected' : ''}>固</option>
+            <option value="活" ${label === '活' ? 'selected' : ''}>活</option>
+          </select>
+          <div class="flex-1 min-w-0">
+            <span class="block text-[9px] text-slate-400">寬 (cm)</span>
+            <input type="number" step="0.1" value="${w}" placeholder="寬度" oninput="updateRowCai('${rowId}')" class="w-full border border-slate-200 bg-white rounded p-1 text-xs text-center font-mono pane-w" />
+          </div>
+          <span class="text-slate-400 text-xs mt-2.5">×</span>
+          <div class="flex-1 min-w-0">
+            <span class="block text-[9px] text-slate-400">長 (cm)</span>
+            <input type="number" step="0.1" value="${h}" placeholder="長度" oninput="updateRowCai('${rowId}')" class="w-full border border-slate-200 bg-white rounded p-1 text-xs text-center font-mono pane-h" />
+          </div>
+          <div class="text-right pl-1 shrink-0 w-11">
+            <span class="block text-[9px] text-slate-400">才數</span>
+            <span class="text-xs font-mono font-bold text-slate-700 pane-cai">${cai}才</span>
+          </div>
+          <button type="button" onclick="this.closest('.pane-item').remove(); updateRowCai('${rowId}');" class="text-slate-400 hover:text-rose-500 p-1 mt-2 shrink-0" title="刪除此片玻璃">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      `;
+    }
+
+    function updatePaneBadge(selectEl) {
+      if (selectEl.value === '固') {
+        selectEl.className = 'w-12 border border-slate-300 rounded p-1 text-xs text-center font-black bg-slate-200 text-slate-700 pane-label';
+      } else {
+        selectEl.className = 'w-12 border border-cyan-300 rounded p-1 text-xs text-center font-black bg-cyan-100 text-cyan-800 pane-label';
+      }
+    }
+
+    function addPaneToRow(rowId, label = '固') {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      const panesContainer = row.querySelector('.panes-container');
+      panesContainer.insertAdjacentHTML('beforeend', buildPaneHTML(rowId, label, '', ''));
+      updateRowCai(rowId);
+    }
+
     function addQuoteItemRow(data = {}) {
       const container = document.getElementById('quote-items-container');
       const rowId = 'item-' + Date.now() + Math.random().toString(36).substr(2, 4);
@@ -838,19 +884,30 @@
       row.id = rowId;
 
       const name = data.name || '';
-      const l1 = data.l1 !== undefined ? data.l1 : '固';
-      const w1 = data.w1 !== undefined && data.w1 !== 0 ? data.w1 : '';
-      const h1 = data.h1 !== undefined && data.h1 !== 0 ? data.h1 : '';
-      const l2 = data.l2 !== undefined ? data.l2 : '活';
-      const w2 = data.w2 !== undefined && data.w2 !== 0 ? data.w2 : '';
-      const h2 = data.h2 !== undefined && data.h2 !== 0 ? data.h2 : '';
       const note = data.note || '';
 
-      const cai1 = calcCai(w1, h1);
-      const cai2 = calcCai(w2, h2);
-      const rawCai = cai1 + cai2;
+      // 支援新版 panes 陣列，並向下相容舊版 l1/w1/h1, l2/w2/h2 結構
+      let panes = [];
+      if (Array.isArray(data.panes) && data.panes.length > 0) {
+        panes = data.panes;
+      } else {
+        const l1 = data.l1 !== undefined ? data.l1 : '固';
+        const w1 = data.w1 !== undefined && data.w1 !== 0 ? data.w1 : '';
+        const h1 = data.h1 !== undefined && data.h1 !== 0 ? data.h1 : '';
+        const l2 = data.l2 !== undefined ? data.l2 : '活';
+        const w2 = data.w2 !== undefined && data.w2 !== 0 ? data.w2 : '';
+        const h2 = data.h2 !== undefined && data.h2 !== 0 ? data.h2 : '';
+        panes = [
+          { label: l1, w: w1, h: h1 },
+          { label: l2, w: w2, h: h2 }
+        ];
+      }
+
+      let rawCai = 0;
+      panes.forEach(p => { rawCai += calcCai(p.w, p.h); });
       const roundedCai = Math.round(rawCai);
       const subtotal = data.subtotal !== undefined ? data.subtotal : (roundedCai > 0 ? roundedCai * 350 : '');
+      const panesHtml = panes.map(p => buildPaneHTML(rowId, p.label || '固', p.w || '', p.h || '')).join('');
 
       row.innerHTML = `
         <div class="flex items-center justify-between gap-2">
@@ -858,45 +915,26 @@
           <div class="flex items-center space-x-1.5 w-1/2 justify-end">
             <span class="text-[11px] text-slate-500 font-bold shrink-0">工區:</span>
             <input type="text" value="${note}" placeholder="例如: 主衛浴乾濕分離" class="w-full border border-slate-200 rounded-lg p-1.5 text-xs bg-white item-note" />
-            <button onclick="document.getElementById('${rowId}').remove(); calcQuoteTotals();" class="text-rose-500 hover:text-rose-700 p-1 shrink-0" title="刪除此尺寸卡片">
+            <button type="button" onclick="document.getElementById('${rowId}').remove(); calcQuoteTotals();" class="text-rose-500 hover:text-rose-700 p-1 shrink-0" title="刪除此尺寸卡片">
               <i class="fa-solid fa-trash-can text-sm"></i>
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 bg-white p-2.5 rounded-lg border border-slate-200/80">
-          <div class="flex items-center space-x-1.5 bg-slate-50/80 p-1.5 rounded-lg border border-slate-100">
-            <input type="text" value="${l1}" placeholder="固" class="w-10 border rounded p-1 text-xs text-center font-bold bg-white item-l1" title="片別標籤" />
-            <div class="flex-1">
-              <span class="block text-[9px] text-slate-400">寬 (cm)</span>
-              <input type="number" value="${w1}" placeholder="寬度" oninput="updateRowCai('${rowId}')" class="w-full border rounded p-1 text-xs text-center font-mono item-w1" />
-            </div>
-            <span class="text-slate-400 text-xs mt-2.5">×</span>
-            <div class="flex-1">
-              <span class="block text-[9px] text-slate-400">長 (cm)</span>
-              <input type="number" value="${h1}" placeholder="長度" oninput="updateRowCai('${rowId}')" class="w-full border rounded p-1 text-xs text-center font-mono item-h1" />
-            </div>
-            <div class="text-right pl-1 shrink-0">
-              <span class="block text-[9px] text-slate-400">才數</span>
-              <span class="text-xs font-mono font-bold text-slate-700 row-cai1">${cai1}才</span>
+        <div class="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+            <span class="text-[11px] font-bold text-slate-500">玻璃片數明細 (可自由增減固定扇 / 活動門扇)</span>
+            <div class="flex items-center space-x-1.5">
+              <button type="button" onclick="addPaneToRow('${rowId}', '固')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded-md border border-slate-200 transition">
+                <i class="fa-solid fa-plus mr-0.5 text-[10px]"></i>新增「固」
+              </button>
+              <button type="button" onclick="addPaneToRow('${rowId}', '活')" class="text-[11px] bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold px-2 py-1 rounded-md border border-cyan-200 transition">
+                <i class="fa-solid fa-plus mr-0.5 text-[10px]"></i>新增「活」
+              </button>
             </div>
           </div>
-
-          <div class="flex items-center space-x-1.5 bg-slate-50/80 p-1.5 rounded-lg border border-slate-100">
-            <input type="text" value="${l2}" placeholder="活" class="w-10 border rounded p-1 text-xs text-center font-bold bg-white item-l2" title="片別標籤" />
-            <div class="flex-1">
-              <span class="block text-[9px] text-slate-400">寬 (cm)</span>
-              <input type="number" value="${w2}" placeholder="寬度" oninput="updateRowCai('${rowId}')" class="w-full border rounded p-1 text-xs text-center font-mono item-w2" />
-            </div>
-            <span class="text-slate-400 text-xs mt-2.5">×</span>
-            <div class="flex-1">
-              <span class="block text-[9px] text-slate-400">長 (cm)</span>
-              <input type="number" value="${h2}" placeholder="長度" oninput="updateRowCai('${rowId}')" class="w-full border rounded p-1 text-xs text-center font-mono item-h2" />
-            </div>
-            <div class="text-right pl-1 shrink-0">
-              <span class="block text-[9px] text-slate-400">才數</span>
-              <span class="text-xs font-mono font-bold text-slate-700 row-cai2">${cai2}才</span>
-            </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 panes-container">
+            ${panesHtml}
           </div>
         </div>
 
@@ -904,7 +942,7 @@
           <div class="bg-cyan-100/80 px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
             <span class="text-[10px] text-cyan-800 font-bold">合計才數:</span>
             <span class="text-xs font-black text-cyan-950 font-mono row-cai-total">${roundedCai} 才</span>
-            <span class="text-[9px] text-cyan-700 hidden sm:inline">(實測 ${Math.round(rawCai*10)/10}才)</span>
+            <span class="text-[9px] text-cyan-700 hidden sm:inline row-cai-raw">(實測 ${Math.round(rawCai*10)/10}才)</span>
           </div>
 
           <div class="flex items-center space-x-1.5">
@@ -919,19 +957,21 @@
 
     function updateRowCai(rowId) {
       const row = document.getElementById(rowId);
-      const w1 = row.querySelector('.item-w1').value;
-      const h1 = row.querySelector('.item-h1').value;
-      const w2 = row.querySelector('.item-w2').value;
-      const h2 = row.querySelector('.item-h2').value;
+      if (!row) return;
+      let rawCai = 0;
 
-      const cai1 = calcCai(w1, h1);
-      const cai2 = calcCai(w2, h2);
-      const rawCai = cai1 + cai2;
+      row.querySelectorAll('.pane-item').forEach(pane => {
+        const w = pane.querySelector('.pane-w').value;
+        const h = pane.querySelector('.pane-h').value;
+        const cai = calcCai(w, h);
+        pane.querySelector('.pane-cai').innerText = `${cai}才`;
+        rawCai += cai;
+      });
+
       const roundedCai = Math.round(rawCai);
-
-      row.querySelector('.row-cai1').innerText = `${cai1}才`;
-      row.querySelector('.row-cai2').innerText = `${cai2}才`;
       row.querySelector('.row-cai-total').innerText = `${roundedCai} 才`;
+      const rawEl = row.querySelector('.row-cai-raw');
+      if (rawEl) rawEl.innerText = `(實測 ${Math.round(rawCai*10)/10}才)`;
 
       const autoSubtotal = roundedCai > 0 ? (roundedCai * 350) : '';
       row.querySelector('.item-subtotal').value = autoSubtotal;
@@ -1020,14 +1060,23 @@
 
       const items = [];
       document.querySelectorAll('.item-row').forEach(row => {
+        const panes = [];
+        row.querySelectorAll('.pane-item').forEach(pane => {
+          panes.push({
+            label: pane.querySelector('.pane-label').value || '固',
+            w: Number(pane.querySelector('.pane-w').value) || 0,
+            h: Number(pane.querySelector('.pane-h').value) || 0
+          });
+        });
         items.push({
           name: row.querySelector('.item-name').value,
-          l1: row.querySelector('.item-l1').value,
-          w1: Number(row.querySelector('.item-w1').value) || 0,
-          h1: Number(row.querySelector('.item-h1').value) || 0,
-          l2: row.querySelector('.item-l2').value,
-          w2: Number(row.querySelector('.item-w2').value) || 0,
-          h2: Number(row.querySelector('.item-h2').value) || 0,
+          panes: panes,
+          l1: panes[0]?.label || '固',
+          w1: panes[0]?.w || 0,
+          h1: panes[0]?.h || 0,
+          l2: panes[1]?.label || '活',
+          w2: panes[1]?.w || 0,
+          h2: panes[1]?.h || 0,
           subtotal: Number(row.querySelector('.item-subtotal').value) || 0,
           note: row.querySelector('.item-note').value
         });
@@ -1085,25 +1134,29 @@
       // 1. 條列玻璃尺寸項目
       document.querySelectorAll('.item-row').forEach(row => {
         const name = row.querySelector('.item-name').value || '玻璃施作';
-        const l1 = row.querySelector('.item-l1').value || '固';
-        const w1 = row.querySelector('.item-w1').value;
-        const h1 = row.querySelector('.item-h1').value;
-        const l2 = row.querySelector('.item-l2').value || '活';
-        const w2 = row.querySelector('.item-w2').value;
-        const h2 = row.querySelector('.item-h2').value;
-
-        const cai1 = calcCai(w1, h1);
-        const cai2 = calcCai(w2, h2);
-        const totalCai = Math.round(cai1 + cai2);
         const subtotal = row.querySelector('.item-subtotal').value;
         const note = row.querySelector('.item-note').value;
 
         let detailParts = [];
-        if (w1 && h1) detailParts.push(`${l1}: ${w1}×${h1}cm (${cai1}才)`);
-        if (w2 && h2) detailParts.push(`${l2}: ${w2}×${h2}cm (${cai2}才)`);
+        let rawCai = 0;
+        let hasDimension = false;
+
+        row.querySelectorAll('.pane-item').forEach(pane => {
+          const label = pane.querySelector('.pane-label').value || '固';
+          const w = pane.querySelector('.pane-w').value;
+          const h = pane.querySelector('.pane-h').value;
+          if (w && h) {
+            hasDimension = true;
+            const cai = calcCai(w, h);
+            rawCai += cai;
+            detailParts.push(`${label}: ${w}×${h}cm (${cai}才)`);
+          }
+        });
+
+        const totalCai = Math.round(rawCai);
         const detailStr = detailParts.length > 0 ? `${detailParts.join(' / ')} ｜ 計 ${totalCai} 才 (@$350)` : '現場依實測施作';
 
-        if (w1 || w2 || Number(subtotal) > 0) {
+        if (hasDimension || Number(subtotal) > 0) {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="border-r border-black p-1 text-center font-medium">${name}</td>
