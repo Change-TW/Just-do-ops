@@ -264,8 +264,8 @@
                   <span class="text-base font-black text-cyan-950 font-mono" id="q-final-total">NT$ 0</span>
                 </div>
                 <div class="flex justify-between text-[11px] text-cyan-700 font-mono mt-1 pt-1 border-t border-cyan-200/60">
-                  <span>定金 30%: <b id="q-deposit-calc">0</b></span>
-                  <span>尾款 70%: <b id="q-balance-calc">0</b></span>
+                  <span>定金 40%: <b id="q-deposit-calc">0</b></span>
+                  <span>尾款 60%: <b id="q-balance-calc">0</b></span>
                 </div>
               </div>
             </div>
@@ -437,7 +437,7 @@
             <div class="bg-gray-200 font-bold px-2 py-0.5 border-b border-black">施工前注意事項</div>
             <div class="p-1.5 space-y-0.5 text-[10px] text-gray-800">
               <div>˙服務保固3年，贈送項目或特殊區域不在保固範圍。(相關條款請見官網)。</div>
-              <div>˙確認報價無誤需先支付30%定金方可排定施工日期，尾款於完工後再行付款。</div>
+              <div>˙確認報價無誤需先支付40%定金（最低 NT$ 4,000）方可排定施工日期，尾款於完工後再行付款。</div>
               <div>˙光觸媒塗層如在矽利康膠條處可能會有無法附著情況（約3公分內）如超過請反應並會安排補強。</div>
               <div>˙晶盾膜因膜厚達3微米，某些高光區域可能會因光線產生膜厚折射、反射白霧或牛頓環現象，此為正常反應。</div>
               <div>˙貼膜服務無滿版施工；為了避免邊角翹曲邊緣可能會預留2~5mm間隙。非無塵狀態下施工可能會有些許入塵。</div>
@@ -794,6 +794,34 @@
         `;
         tableBody.appendChild(tr);
       });
+    }
+
+    function calcQuoteTotals() {
+      let sum = 0;
+      document.querySelectorAll('.item-row').forEach(row => {
+        sum += Number(row.querySelector('.item-subtotal').value) || 0;
+      });
+      document.querySelectorAll('.standalone-row').forEach(row => {
+        sum += Number(row.querySelector('.standalone-amount').value) || 0;
+      });
+
+      const addon = Number(document.getElementById('q-addon').value) || 0;
+      const discount = Number(document.getElementById('q-discount').value) || 0;
+      const total = sum + addon + discount;
+
+      document.getElementById('q-final-total').innerText = `NT$ ${total.toLocaleString()}`;
+
+      // 定金40%（最低 NT$ 4,000，若總金額小於 4,000 則以總金額計）
+      let deposit = 0;
+      if (total > 0) {
+        deposit = Math.max(Math.round(total * 0.4), Math.min(total, 4000));
+      }
+      const balance = Math.max(0, total - deposit);
+
+      document.getElementById('q-deposit-calc').innerText = deposit.toLocaleString();
+      document.getElementById('q-balance-calc').innerText = balance.toLocaleString();
+
+      return { sum, addon, discount, total, deposit, balance };
     }
 
     function calcTotal(items = [], standaloneItems = [], addon = 0, discount = 0) {
